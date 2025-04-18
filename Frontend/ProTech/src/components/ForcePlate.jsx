@@ -40,12 +40,20 @@ function ForcePlate({ name }) {
 					(a, b) => new Date(a.date) - new Date(b.date),
 				);
 
-				const keyCounts = {};
+				const keyCounts = {
+					name: 0,
+					date: 0,
+					rsi_modified_meters_sec: 0,
+					jump_height_cm: 0,
+					concentric_impulse_asym_percent_L: 0,
+					concentric_impulse_asym_percent_R: 0,
+					eccentric_deceleration_impulse_asym_percent_L: 0,
+					eccentric_deceleration_impulse_asym_percent_R: 0,
+					landing_impulse_asym_percent_L: 0,
+					landing_impulse_asym_percent_R: 0,
+				};
 				sortedData.forEach((item) => {
 					Object.entries(item).forEach(([key, value]) => {
-						if (!(key in keyCounts)) {
-							keyCounts[key] = 0;
-						}
 						if (value !== null && value !== undefined) {
 							keyCounts[key] += 1;
 						}
