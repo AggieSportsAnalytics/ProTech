@@ -1,0 +1,257 @@
+@import "tailwindcss";
+
+:root {
+  --dark-blue: #002855;
+  --gold: #b3995d;
+  --white: #ffffff;
+  --light-gray: #e6e6e6;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  /* background-color: var(--dark-blue); */
+  /* color: var(--white); */
+}
+
+.App {
+  text-align: center;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start; /* Ensure proper alignment */
+  background-color: var(--dark-blue); /* Ensure App component has blue background */
+  color: var(--white);
+  position: relative;
+  padding: 20px;
+}
+
+.logo {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  width: 100px;
+  height: auto;
+}
+
+.App-header {
+  background-color: var(--dark-blue);
+  padding: 20px;
+  color: var(--white);
+  text-align: center;
+}
+
+.explanation {
+  margin: 20px auto;
+  padding: 10px 20px;
+  max-width: 600px;
+  text-align: center;
+  font-size: 1rem;
+  background-color: var(--white);
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  color: var(--dark-blue);
+}
+
+.App-link {
+  color: var(--gold);
+}
+
+/* Athlete card styling */
+.athlete-card {
+  background-color: var(--white);
+  color: var(--dark-blue);
+  border: 2px solid var(--gold);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  margin: 20px 0;
+  padding: 16px;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 1000px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.athlete-card h3 {
+  margin: 10px 0;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.athlete-card p {
+  margin: 5px 0;
+}
+
+.athlete-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Athlete images styling */
+.athlete-images {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  min-width: 300px;
+}
+
+.athlete-image {
+  width: 200px;
+  height: 600px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease;
+}
+
+.athlete-image:hover {
+  transform: scale(1.1);
+}
+
+/* Carousel styling */
+.carousel-container {
+  width: 100%;
+  max-width: 1200px;
+  min-width: 300px;
+  margin: 0 auto;
+  position: relative;
+  padding: 20px;
+  min-height: 300px; /* Ensures carousel always has height */
+}
+
+
+.slick-slider {
+  display: flex;
+  justify-content: center;
+}
+
+.slick-track {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.slick-slide {
+  padding: 10px;
+  display: inline-block;
+}
+
+.slick-dots {
+  bottom: -30px;
+}
+
+.slick-dots li button:before {
+  color: var(--gold);
+}
+
+.slick-prev, .slick-next {
+  background-color: var(--gold);
+  border-radius: 50%;
+  padding: 10px;
+  z-index: 1;
+}
+
+.slick-prev {
+  left: 10px;
+}
+
+.slick-next {
+  right: 10px;
+}
+
+.slick-prev:hover, .slick-next:hover {
+  background-color: var(--dark-blue);
+  color: var(--gold);
+}
+
+/* Dropdown menu */
+select {
+  padding: 10px;
+  margin-bottom: 20px;
+  font-size: 16px;
+  border-radius: 5px;
+  border: 1px solid var(--gold);
+  background-color: var(--white);
+  color: var(--dark-blue);
+  z-index: 10; /* Ensure dropdown stays on top */
+  position: relative; /* Ensure z-index works properly */
+}
+
+button {
+  background-color: var(--gold);
+  color: var(--white);
+  border: none;
+  padding: 10px 20px;
+  margin: 10px;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: var(--dark-blue);
+  color: var(--gold);
+}
+
+/* Stats table styling */
+.stats-table {
+  width: 100%;
+  max-width: 1000px; /* Match the card width for consistency */
+  border-collapse: collapse;
+  margin: 20px auto; /* Center the table */
+  background-color: var(--white);
+  color: var(--dark-blue);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.stats-table th,
+.stats-table td {
+  border: 1px solid var(--light-gray);
+  padding: 12px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.stats-table th {
+  background-color: var(--gold);
+  color: var(--white);
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.stats-table tr:nth-child(even) {
+  background-color: var(--light-gray);
+}
+
+.stats-table tr:hover {
+  background-color: var(--gold);
+  color: var(--white);
+}
+
+/* General adjustments */
+@media (max-width: 768px) {
+  .athlete-images {
+    flex-wrap: wrap; /* Allow images to wrap on smaller screens */
+  }
+
+  .athlete-image {
+    width: 100px;
+  }
+
+  .athlete-card {
+    width: 100%;
+  }
+
+  .stats-table th,
+  .stats-table td {
+    font-size: 0.8rem;
+    padding: 8px;
+  }
+
+  .slick-prev, .slick-next {
+    padding: 8px;
+  }
+}
