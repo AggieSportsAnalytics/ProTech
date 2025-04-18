@@ -8,7 +8,6 @@ import {
 	CartesianGrid,
 	Legend,
 	ResponsiveContainer,
-	ReferenceLine,
 } from "recharts";
 import supabase from "../utils/supabase";
 import Loader from "./Loader";
@@ -17,6 +16,7 @@ function ForcePlate({ name }) {
 	const [forcePlateData, setForcePlateData] = useState([]);
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
+	const [keyCounts, setKeyCounts] = useState({});
 
 	useEffect(() => {
 		async function getForcePlateData() {
@@ -39,6 +39,20 @@ function ForcePlate({ name }) {
 				const sortedData = combined.sort(
 					(a, b) => new Date(a.date) - new Date(b.date),
 				);
+
+				const keyCounts = {};
+				sortedData.forEach((item) => {
+					Object.entries(item).forEach(([key, value]) => {
+						if (!(key in keyCounts)) {
+							keyCounts[key] = 0;
+						}
+						if (value !== null && value !== undefined) {
+							keyCounts[key] += 1;
+						}
+					});
+				});
+
+				setKeyCounts(keyCounts);
 				setForcePlateData(sortedData);
 			} else {
 				console.error("Error getting force plate data:", error);
@@ -58,22 +72,25 @@ function ForcePlate({ name }) {
 		return <Loader />;
 	}
 
-	if (forcePlateData.length === 0 && !loading) {
-		return <div className="p-8">No data found for this athlete.</div>;
-	}
-
 	return (
-		<div className="container mx-auto px-4 py-6">
+		<>
 			<h1 className="text-2xl font-bold mb-8">Force Plate Data for {name}</h1>
 
 			{/* RSI Modified (full width) */}
-			<section className="mb-8">
+			<section className="relative mb-8">
 				<h2 className="text-xl font-semibold mb-4">RSI Modified (m/s)</h2>
+
+				{keyCounts.rsi_modified_meters_sec === 0 && (
+					<div className="absolute inset-0 flex items-center justify-center bg-opacity-80 z-10">
+						<span className="text-gray-500 text-xl font-semibold">No Data</span>
+					</div>
+				)}
 				<ResponsiveContainer width="100%" height={300}>
 					<LineChart data={forcePlateData}>
 						<CartesianGrid strokeDasharray="3 3" />
 						<XAxis dataKey="date" />
 						<YAxis
+							domain={keyCounts.rsi_modified_meters_sec === 0 ? [0, 1] : null}
 							label={{ value: "RSI (m/s)", angle: -90, position: "insideLeft" }}
 						/>
 						<Tooltip />
@@ -88,15 +105,20 @@ function ForcePlate({ name }) {
 					</LineChart>
 				</ResponsiveContainer>
 			</section>
-
-			{/* Jump Height (full width) */}
-			<section className="mb-8">
+			<section className="relative mb-8">
 				<h2 className="text-xl font-semibold mb-4">Jump Height (cm)</h2>
+
+				{keyCounts.jump_height_cm === 0 && (
+					<div className="absolute inset-0 flex items-center justify-center bg-opacity-80 z-10">
+						<span className="text-gray-500 text-xl font-semibold">No Data</span>
+					</div>
+				)}
 				<ResponsiveContainer width="100%" height={300}>
 					<LineChart data={forcePlateData}>
 						<CartesianGrid strokeDasharray="3 3" />
 						<XAxis dataKey="date" />
 						<YAxis
+							domain={keyCounts.jump_height_cm === 0 ? [0, 150] : null}
 							label={{
 								value: "Jump Height (cm)",
 								angle: -90,
@@ -116,19 +138,29 @@ function ForcePlate({ name }) {
 				</ResponsiveContainer>
 			</section>
 
-			{/* Paired Asymmetry Charts */}
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-				{/* Concentric Impulse Asymmetry */}
-				<section className="mb-8">
+				<section className="relative mb-8">
 					<h2 className="text-xl font-semibold mb-4">
 						Concentric Impulse Asymmetry Left (%)
 					</h2>
+
+					{keyCounts.concentric_impulse_asym_percent_L === 0 && (
+						<div className="absolute inset-0 flex items-center justify-center bg-opacity-80 z-10">
+							<span className="text-gray-500 text-xl font-semibold">
+								No Data
+							</span>
+						</div>
+					)}
 					<ResponsiveContainer width="100%" height={300}>
 						<LineChart data={forcePlateData}>
 							<CartesianGrid strokeDasharray="3 3" />
 							<XAxis dataKey="date" />
 							<YAxis
-								domain={[-10, 50]}
+								domain={
+									keyCounts.concentric_impulse_asym_percent_L === 0
+										? [-10, 50]
+										: null
+								}
 								label={{
 									value: "Asymmetry (%)",
 									angle: -90,
@@ -137,12 +169,6 @@ function ForcePlate({ name }) {
 							/>
 							<Tooltip />
 							<Legend />
-							<ReferenceLine
-								y={15}
-								stroke="red"
-								strokeDasharray="3 3"
-								label="High Risk (15%)"
-							/>
 							<Line
 								type="monotone"
 								dataKey="concentric_impulse_asym_percent_L"
@@ -153,16 +179,28 @@ function ForcePlate({ name }) {
 						</LineChart>
 					</ResponsiveContainer>
 				</section>
-				<section className="mb-8">
+				<section className="relative mb-8">
 					<h2 className="text-xl font-semibold mb-4">
 						Concentric Impulse Asymmetry Right (%)
 					</h2>
+
+					{keyCounts.concentric_impulse_asym_percent_R === 0 && (
+						<div className="absolute inset-0 flex items-center justify-center bg-opacity-80 z-10">
+							<span className="text-gray-500 text-xl font-semibold">
+								No Data
+							</span>
+						</div>
+					)}
 					<ResponsiveContainer width="100%" height={300}>
 						<LineChart data={forcePlateData}>
 							<CartesianGrid strokeDasharray="3 3" />
 							<XAxis dataKey="date" />
 							<YAxis
-								domain={[-10, 50]}
+								domain={
+									keyCounts.concentric_impulse_asym_percent_R === 0
+										? [-10, 50]
+										: null
+								}
 								label={{
 									value: "Asymmetry (%)",
 									angle: -90,
@@ -171,12 +209,6 @@ function ForcePlate({ name }) {
 							/>
 							<Tooltip />
 							<Legend />
-							<ReferenceLine
-								y={15}
-								stroke="red"
-								strokeDasharray="3 3"
-								label="High Risk (15%)"
-							/>
 							<Line
 								type="monotone"
 								dataKey="concentric_impulse_asym_percent_R"
@@ -187,18 +219,28 @@ function ForcePlate({ name }) {
 						</LineChart>
 					</ResponsiveContainer>
 				</section>
-
-				{/* Eccentric Deceleration Impulse Asymmetry */}
-				<section className="mb-8">
+				<section className="relative mb-8">
 					<h2 className="text-xl font-semibold mb-4">
 						Eccentric Deceleration Impulse Asymmetry Left (%)
 					</h2>
+
+					{keyCounts.eccentric_deceleration_impulse_asym_percent_L === 0 && (
+						<div className="absolute inset-0 flex items-center justify-center bg-opacity-80 z-10">
+							<span className="text-gray-500 text-xl font-semibold">
+								No Data
+							</span>
+						</div>
+					)}
 					<ResponsiveContainer width="100%" height={300}>
 						<LineChart data={forcePlateData}>
 							<CartesianGrid strokeDasharray="3 3" />
 							<XAxis dataKey="date" />
 							<YAxis
-								domain={[-10, 50]}
+								domain={
+									keyCounts.eccentric_deceleration_impulse_asym_percent_L === 0
+										? [-10, 50]
+										: null
+								}
 								label={{
 									value: "Asymmetry (%)",
 									angle: -90,
@@ -217,16 +259,28 @@ function ForcePlate({ name }) {
 						</LineChart>
 					</ResponsiveContainer>
 				</section>
-				<section className="mb-8">
+				<section className="relative mb-8">
 					<h2 className="text-xl font-semibold mb-4">
 						Eccentric Deceleration Impulse Asymmetry Right (%)
 					</h2>
+
+					{keyCounts.eccentric_deceleration_impulse_asym_percent_R === 0 && (
+						<div className="absolute inset-0 flex items-center justify-center bg-opacity-80 z-10">
+							<span className="text-gray-500 text-xl font-semibold">
+								No Data
+							</span>
+						</div>
+					)}
 					<ResponsiveContainer width="100%" height={300}>
 						<LineChart data={forcePlateData}>
 							<CartesianGrid strokeDasharray="3 3" />
 							<XAxis dataKey="date" />
 							<YAxis
-								domain={[-10, 50]}
+								domain={
+									keyCounts.eccentric_deceleration_impulse_asym_percent_R === 0
+										? [-10, 50]
+										: null
+								}
 								label={{
 									value: "Asymmetry (%)",
 									angle: -90,
@@ -245,18 +299,28 @@ function ForcePlate({ name }) {
 						</LineChart>
 					</ResponsiveContainer>
 				</section>
-
-				{/* Landing Impulse Asymmetry */}
-				<section className="mb-8">
+				<section className="relative mb-8">
 					<h2 className="text-xl font-semibold mb-4">
 						Landing Impulse Asymmetry Left (%)
 					</h2>
+
+					{keyCounts.landing_impulse_asym_percent_L === 0 && (
+						<div className="absolute inset-0 flex items-center justify-center bg-opacity-80 z-10">
+							<span className="text-gray-500 text-xl font-semibold">
+								No Data
+							</span>
+						</div>
+					)}
 					<ResponsiveContainer width="100%" height={300}>
 						<LineChart data={forcePlateData}>
 							<CartesianGrid strokeDasharray="3 3" />
 							<XAxis dataKey="date" />
 							<YAxis
-								domain={[-10, 50]}
+								domain={
+									keyCounts.landing_impulse_asym_percent_L === 0
+										? [-10, 50]
+										: null
+								}
 								label={{
 									value: "Asymmetry (%)",
 									angle: -90,
@@ -275,16 +339,28 @@ function ForcePlate({ name }) {
 						</LineChart>
 					</ResponsiveContainer>
 				</section>
-				<section className="mb-8">
+				<section className="relative mb-8">
 					<h2 className="text-xl font-semibold mb-4">
 						Landing Impulse Asymmetry Right (%)
 					</h2>
+
+					{keyCounts.landing_impulse_asym_percent_R === 0 && (
+						<div className="absolute inset-0 flex items-center justify-center bg-opacity-80 z-10">
+							<span className="text-gray-500 text-xl font-semibold">
+								No Data
+							</span>
+						</div>
+					)}
 					<ResponsiveContainer width="100%" height={300}>
 						<LineChart data={forcePlateData}>
 							<CartesianGrid strokeDasharray="3 3" />
 							<XAxis dataKey="date" />
 							<YAxis
-								domain={[-10, 50]}
+								domain={
+									keyCounts.landing_impulse_asym_percent_R === 0
+										? [-10, 50]
+										: null
+								}
 								label={{
 									value: "Asymmetry (%)",
 									angle: -90,
@@ -304,7 +380,7 @@ function ForcePlate({ name }) {
 					</ResponsiveContainer>
 				</section>
 			</div>
-		</div>
+		</>
 	);
 }
 

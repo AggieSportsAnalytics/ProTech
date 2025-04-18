@@ -22,30 +22,6 @@ function Data() {
 				return;
 			}
 
-			const { error: forceplateBaselineError } = await supabase
-				.from("ForcePlate_Baseline")
-				.delete()
-				.eq("name", name);
-			if (forceplateBaselineError) {
-				return;
-			}
-
-			const { error: forceplateWeeklyError } = await supabase
-				.from("ForcePlate_Weekly")
-				.delete()
-				.eq("name", name);
-			if (forceplateWeeklyError) {
-				return;
-			}
-
-			const { error: nordboardError } = await supabase
-				.from("NordBoard")
-				.delete()
-				.eq("name", name);
-			if (nordboardError) {
-				return;
-			}
-
 			const { error: namesError } = await supabase
 				.from("names")
 				.delete()
@@ -98,7 +74,7 @@ function Data() {
 	return (
 		<div className="mx-auto p-6">
 			<h1 className="text-2xl font-bold mb-6 text-gray-800">Athletes</h1>
-			<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+			<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 mb-20">
 				{names.map((name) => (
 					<div
 						type="button"

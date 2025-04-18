@@ -51,20 +51,21 @@ function NordBoard({ name }) {
 		return <Loader />;
 	}
 
-	if (nordData.length === 0 && !loading) {
-		return <div className="p-8">No data found for this athlete.</div>;
-	}
-
 	return (
-		<div>
+		<>
 			<h1 className="text-2xl font-bold mb-6">NordBoard Data for {name}</h1>
-			<div className="mb-12">
-				<ResponsiveContainer width="100%" height={400}>
+			<div className="relative mb-8">
+				{nordData.length === 0 && (
+					<div className="absolute inset-0 flex items-center justify-center bg-opacity-80 z-10">
+						<span className="text-gray-500 text-xl font-semibold">No Data</span>
+					</div>
+				)}
+				<ResponsiveContainer width="100%" height={300}>
 					<LineChart data={nordData}>
 						<CartesianGrid strokeDasharray="3 3" />
 						<XAxis dataKey="date" />
 						<YAxis
-							domain={[-50, 50]}
+							domain={nordData.length === 0 ? [-50, 50] : null}
 							label={{
 								value: "Imbalance (%)",
 								angle: -90,
@@ -82,7 +83,7 @@ function NordBoard({ name }) {
 					</LineChart>
 				</ResponsiveContainer>
 			</div>
-		</div>
+		</>
 	);
 }
 
