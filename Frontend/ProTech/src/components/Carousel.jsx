@@ -45,7 +45,7 @@ function Carousel({ athletes }) {
 
 			<Slider {...settings}>
 				{filteredAthletes.map((athlete) => (
-					<div key={athlete.id}>
+					<div key={athlete.name}>
 						<AthleteCard athlete={athlete} />
 					</div>
 				))}

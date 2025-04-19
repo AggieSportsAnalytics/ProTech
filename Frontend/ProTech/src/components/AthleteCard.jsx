@@ -9,36 +9,39 @@ function AthleteCard({ athlete }) {
 			if (!athlete?.name) {
 				return;
 			}
+			try {
+				const availableYears = athlete.stats.map((stat) => stat.year);
+				const [firstName, lastName] = athlete.name.trim().split(/\s+/);
+				const normalizedFirstLast = `${firstName}_${lastName}`.toLowerCase();
+				const normalizedLast = lastName.toLowerCase();
 
-			const availableYears = athlete.stats.map((stat) => stat.year);
-			const [firstName, lastName] = athlete.name.trim().split(/\s+/);
-			const normalizedFirstLast = `${firstName}_${lastName}`.toLowerCase();
-			const normalizedLast = lastName.toLowerCase();
+				const tryUrl = async (baseName, year) => {
+					const url = `${import.meta.env.VITE_S3_BUCKET_URL}/${baseName}${year}.jpg`;
+					try {
+						const res = await fetch(url, { method: "HEAD" }); // HEAD = just check if file exists
+						if (res.ok) {
+							return url;
+						}
+					} catch (err) {
+						console.error("Fetch error:", err);
+					}
+					return null;
+				};
 
-			const tryUrl = async (baseName, year) => {
-				const url = `${import.meta.env.VITE_S3_BUCKET_URL}/${baseName}${year}.jpg`;
-				try {
-					const res = await fetch(url, { method: "HEAD" }); // HEAD = just check if file exists
-					if (res.ok) {
+				const urls = await Promise.all(
+					availableYears.map(async (year) => {
+						let url = await tryUrl(normalizedFirstLast, year);
+						if (!url) {
+							url = await tryUrl(normalizedLast, year);
+						}
 						return url;
-					}
-				} catch (err) {
-					console.error("Fetch error:", err);
-				}
-				return null;
-			};
+					}),
+				);
 
-			const urls = await Promise.all(
-				availableYears.map(async (year) => {
-					let url = await tryUrl(normalizedFirstLast, year);
-					if (!url) {
-						url = await tryUrl(normalizedLast, year);
-					}
-					return url;
-				}),
-			);
-
-			setImageUrls(urls.filter(Boolean));
+				setImageUrls(urls.filter(Boolean));
+			} catch (error) {
+				console.error(error);
+			}
 		};
 
 		getImages();

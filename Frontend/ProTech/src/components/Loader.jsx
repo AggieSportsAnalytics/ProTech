@@ -1,6 +1,6 @@
 function Loader() {
 	return (
-		<div className="fixed inset-0 flex items-center justify-center backdrop-blur-[2px] bg-black/10">
+		<div className="fixed inset-0 flex items-center justify-center backdrop-blur-[2px] z-50">
 			<div className="flex items-end space-x-1 h-12">
 				{[...Array(5)].map((val, i) => (
 					<div

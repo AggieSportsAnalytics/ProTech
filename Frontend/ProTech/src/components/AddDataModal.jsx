@@ -2,11 +2,13 @@ import { useState } from "react";
 import Modal from "react-modal";
 import supabase from "../utils/supabase";
 import Papa from "papaparse";
+import Loader from "../components/Loader";
 
 Modal.setAppElement("#root");
 
 function AddDataModal({ isModalOpen, setIsModalOpen }) {
 	const [selectedType, setSelectedType] = useState(null);
+	const [loading, setLoading] = useState(false);
 
 	const [formData, setFormData] = useState({});
 
@@ -25,7 +27,11 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 
 	const handleCSVUpload = (e) => {
 		const file = e.target.files[0];
-		if (!file) return;
+		if (!file) {
+			alert("Please upload a file");
+			return;
+		}
+		setLoading(true);
 
 		Papa.parse(file, {
 			header: true,
@@ -42,7 +48,7 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 						.in("name", uniqueNames);
 
 					if (fetchError) {
-						return;
+						throw new Error("Failed to fetch data");
 					}
 
 					const existingNameSet = new Set(existingNames.map((n) => n.name));
@@ -55,7 +61,7 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 							.from("names")
 							.insert(missingNames.map((name) => ({ name })));
 						if (insertNamesError) {
-							return;
+							throw new Error("Failed to upload data");
 						}
 					}
 
@@ -74,7 +80,7 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 							.from("NordBoard")
 							.insert(insertData);
 						if (error) {
-							return;
+							throw new Error("Failed to upload data");
 						}
 					} else if (selectedType === "forceplate") {
 						const insertData = rows.map((row) => ({
@@ -108,15 +114,17 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 							.from("ForcePlate_Baseline")
 							.insert(insertData);
 						if (error) {
-							return;
+							throw new Error("Failed to upload data");
 						}
 					}
 
-					alert("CSV uploaded and inserted successfully!");
 					handleClose();
+					alert("CSV uploaded and inserted successfully!");
 				} catch (err) {
 					console.error("Error uploading CSV:", err.message);
 					alert("Failed to upload CSV.");
+				} finally {
+					setLoading(false);
 				}
 			},
 		});
@@ -124,6 +132,7 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 
 	const submitData = async (e) => {
 		e.preventDefault();
+		setLoading(true);
 		try {
 			const { data: existingNames, error: nameCheckError } = await supabase
 				.from("names")
@@ -131,7 +140,7 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 				.eq("name", formData.name);
 
 			if (nameCheckError) {
-				return;
+				throw new Error("Failed to fetch data");
 			}
 
 			if (!existingNames || existingNames.length === 0) {
@@ -140,7 +149,7 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 					.insert([{ name: formData.name }]);
 
 				if (insertNameError) {
-					return;
+					throw new Error("Failed to insert data");
 				}
 			}
 
@@ -157,7 +166,7 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 					},
 				]);
 				if (error) {
-					return;
+					throw new Error("Failed to insert data");
 				}
 			} else if (selectedType === "forceplate") {
 				const { error } = await supabase.from("ForcePlate_Baseline").insert([
@@ -189,17 +198,23 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 					},
 				]);
 				if (error) {
-					return;
+					throw new Error("Failed to insert data");
 				}
 			}
 
-			alert("Data submitted successfully!");
 			handleClose();
+			alert("Data submitted successfully!");
 		} catch (err) {
 			console.error("Error inserting data:", err.message);
 			alert("Failed to submit data.");
+		} finally {
+			setLoading(false);
 		}
 	};
+
+	if (loading) {
+		return <Loader />;
+	}
 
 	return (
 		<Modal

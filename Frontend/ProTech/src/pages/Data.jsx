@@ -19,6 +19,7 @@ function Data() {
 			);
 
 			if (!confirmed) {
+				setLoading(false);
 				return;
 			}
 
@@ -27,13 +28,15 @@ function Data() {
 				.delete()
 				.eq("name", name);
 			if (namesError) {
-				return;
+				throw new Error("Failed to delete");
 			}
 
 			alert("Deleted successfully!");
 		} catch (err) {
 			console.error("Error deleting:", err.message);
 			alert("Failed to delete.");
+		} finally {
+			setLoading(false);
 		}
 	};
 
@@ -92,6 +95,7 @@ function Data() {
 							onClick={(e) => {
 								e.stopPropagation();
 								e.preventDefault();
+								setLoading(true);
 								handleDelete(name);
 							}}
 						>
