@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from "react";
-//import DropdownFilter from './components/DropdownFilter';
+import { useState, useEffect } from "react";
 import Carousel from "../components/Carousel";
 import "../Index.css";
 import logo from "/aggie.png";
 import Loader from "../components/Loader";
 import supabase from "../utils/supabase";
+import RecruitmentModal from "../components/RecruitmentModal";
 
 function Recruitment() {
 	const [selectedPosition] = useState("");
 	const [athletes, setAthletes] = useState([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState("");
+	const [isModalOpen, setIsModalOpen] = useState(false);
 
 	useEffect(() => {
 		const getAllPlayers = async () => {
@@ -63,6 +64,17 @@ function Recruitment() {
 				</p>
 			</div>
 			<Carousel athletes={filteredAthletes} />
+			<button
+				onClick={() => setIsModalOpen(true)}
+				type="button"
+				className="z-50 fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-transform duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+			>
+				<span className="text-3xl">+</span>
+			</button>
+			<RecruitmentModal
+				isModalOpen={isModalOpen}
+				setIsModalOpen={setIsModalOpen}
+			/>
 		</div>
 	);
 }

@@ -83,7 +83,7 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 							rows.map((row) => ({
 								id: row.id,
 								name: row.name,
-								position: row.position,
+								position: row.position?.toLowerCase(),
 							})),
 						),
 					];
@@ -111,7 +111,7 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 							.insert(
 								missingUsers.map((user) => ({
 									id: user.id,
-									position: user.position,
+									position: user.position?.toLowerCase(),
 									name: user.name,
 								})),
 							);
@@ -231,7 +231,11 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 				const { error: insertNameError } = await supabase
 					.from("names")
 					.insert([
-						{ position: formData.position, name: formData.name, id: id },
+						{
+							position: formData.position?.toLowerCase(),
+							name: formData.name,
+							id: id,
+						},
 					]);
 
 				if (insertNameError) {

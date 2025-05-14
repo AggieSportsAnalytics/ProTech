@@ -8,6 +8,8 @@ import "slick-carousel/slick/slick-theme.css";
 function Carousel({ athletes }) {
 	const [selectedPosition, setSelectedPosition] = useState(""); // Track the selected position
 
+	console.log(athletes);
+
 	// Create a list of unique positions for the dropdown
 	const positions = [
 		...new Set(athletes.map((athlete) => athlete.position)),
@@ -23,20 +25,19 @@ function Carousel({ athletes }) {
 	// Carousel settings
 	const settings = {
 		dots: true,
-		infinite: false, // Infinite scrolling
+		infinite: false,
 		speed: 500,
-		slidesToShow: 1, // Display one card at a time
+		slidesToShow: 1,
 		slidesToScroll: 1,
-		centerMode: true, // Keeps the active slide centered
-		focusOnSelect: true, // Makes the selected card focus
-		variableWidth: false, // Set to true to allow variable card widths
+		centerMode: true,
+		focusOnSelect: true,
+		variableWidth: false,
 		adaptiveHeight: true,
-		arrows: filteredAthletes.length > 1, // Adjust height to the content of the slide
+		arrows: filteredAthletes.length > 1,
 	};
 
 	return (
 		<div className="carousel-container">
-			{/* Pass positions and selected position to your existing DropdownFilter component */}
 			<DropdownFilter
 				positions={positions}
 				selectedPosition={selectedPosition}
@@ -44,7 +45,7 @@ function Carousel({ athletes }) {
 			/>
 
 			<Slider {...settings}>
-				{filteredAthletes.map((athlete) => (
+				{filteredAthletes.map((athlete, index) => (
 					<div key={athlete.name}>
 						<AthleteCard athlete={athlete} />
 					</div>

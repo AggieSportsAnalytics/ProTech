@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 function AthleteCard({ athlete }) {
-	const availableYears = athlete.stats.map((stat) => stat.year); // Extract years from stats
+	const availableYears = useMemo(
+		() => athlete.stats.map((stat) => stat.year),
+		[athlete],
+	);
 	const [imageUrls, setImageUrls] = useState([]);
+	const [copied, setCopied] = useState(false);
 
 	useEffect(() => {
 		const getImages = async () => {
-			if (!athlete?.name) {
+			if (!athlete?.id || !availableYears) {
 				return;
 			}
 			try {
-				const availableYears = athlete.stats.map((stat) => stat.year);
-				const [firstName, lastName] = athlete.name.trim().split(/\s+/);
-				const normalizedFirstLast = `${firstName}_${lastName}`.toLowerCase();
-
 				const urls = availableYears.map(
 					(year) =>
-						`${import.meta.env.VITE_S3_BUCKET_URL}//${normalizedFirstLast}_${year}.jpg`,
+						`${import.meta.env.VITE_S3_BUCKET_URL}/${athlete.id}/${year}.jpg`,
 				);
 
 				setImageUrls(urls);
@@ -31,6 +31,19 @@ function AthleteCard({ athlete }) {
 	return (
 		<div className="athlete-card">
 			<h3>{athlete.name}</h3>
+			<div
+				className="text-xs text-gray-500"
+				onClick={(e) => {
+					e.stopPropagation();
+					navigator.clipboard.writeText(athlete.id);
+					setCopied(true);
+					setTimeout(() => {
+						setCopied(false);
+					}, 1000);
+				}}
+			>
+				{!copied ? <p>Click to Copy ID: {athlete.id}</p> : <p>Copied!</p>}
+			</div>
 			<p>Position: {athlete.position}</p>
 			<p>Height: {athlete.height}</p>
 			<p>Wing: {athlete.wing}</p>
@@ -40,7 +53,12 @@ function AthleteCard({ athlete }) {
 			<div className="athlete-images">
 				{imageUrls.map((image, index) => (
 					<div key={index} className="image-container">
-						<img src={image} alt={athlete.name} className="athlete-image" />
+						<img
+							src={image}
+							alt={athlete.name}
+							className="athlete-image"
+							loading="lazy"
+						/>
 						<p className="image-year">{availableYears[index]}</p>
 					</div>
 				))}
