@@ -20,7 +20,8 @@
     "react-slick": "^0.30.3",
     "recharts": "^2.15.2",
     "slick-carousel": "^1.8.1",
-    "tailwindcss": "^4.1.4"
+    "tailwindcss": "^4.1.4",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/react": "^19.0.10",

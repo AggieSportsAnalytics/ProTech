@@ -1,2 +1,5 @@
-name,date,L_max_force_n,R_max_force_n,max_imbalance_percent
-TEST USER,04/17/2025,539,471,-12.61595547
+name,date,rsi_modified_meters_sec,jump_height_cm,concentric_impulse_asym_percent_L,concentric_impulse_asym_percent_R,eccentric_deceleration_impulse_asym_percent_L,eccentric_deceleration_impulse_asym_percent_R,landing_impulse_asym_percent_L,landing_impulse_asym_percent_R,id,position
+wogihwo,2024-10-20,0.99,53.3,6.7,null,26.3,null,30.3,null,dc2b294b-cf3f-4ac1-aedf-f9be1f4447e5,
+wogihwo,2024-10-20,0.99,53.3,6.7,null,26.3,null,30.3,null,75d0f74e-f42e-423a-95ed-27b10f49417f,
+wogihwo,2024-10-20,0.99,53.3,6.7,null,26.3,null,30.3,null,d1157991-b8b0-4787-9e1b-2da603527275,
+wogihwo,2024-10-20,0.99,53.3,6.7,null,26.3,null,30.3,null,0f31dda0-dd32-4b5d-8816-7ebfe8cab370

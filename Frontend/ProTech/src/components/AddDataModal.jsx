@@ -3,6 +3,7 @@ import Modal from "react-modal";
 import supabase from "../utils/supabase";
 import Papa from "papaparse";
 import Loader from "../components/Loader";
+import { v4 as uuidv4 } from "uuid";
 
 Modal.setAppElement("#root");
 
@@ -25,6 +26,43 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 		});
 	};
 
+	const populateData = async (data) => {
+		const nameToId = new Map();
+
+		const rowsWithIds = [];
+
+		for (const row of data) {
+			if (!row.id && row.name) {
+				if (!nameToId.has(row.name)) {
+					const newId = uuidv4();
+					nameToId.set(row.name, newId);
+				}
+				rowsWithIds.push({ ...row, id: nameToId.get(row.name) });
+				continue;
+			}
+
+			if ((row.id && !row.name) || (row.id && row.name)) {
+				const { data, error } = await supabase
+					.from("names")
+					.select("name, position")
+					.eq("id", row.id)
+					.single();
+
+				if (error || !data?.name) {
+					console.warn("Could not fetch name for ID:", row.id);
+					continue;
+				}
+
+				rowsWithIds.push({ ...row, name: data.name, position: data.position });
+				continue;
+			}
+
+			console.warn("Skipping row due to missing name and id:", row);
+		}
+
+		return rowsWithIds;
+	};
+
 	const handleCSVUpload = (e) => {
 		const file = e.target.files[0];
 		if (!file) {
@@ -38,28 +76,45 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 			skipEmptyLines: true,
 			complete: async (results) => {
 				try {
-					const rows = results.data;
+					const rows = await populateData(results.data);
 
-					const uniqueNames = [...new Set(rows.map((row) => row.name))];
+					const uniqueUsers = [
+						...new Set(
+							rows.map((row) => ({
+								id: row.id,
+								name: row.name,
+								position: row.position,
+							})),
+						),
+					];
 
-					const { data: existingNames, error: fetchError } = await supabase
+					const { data: existingIds, error: fetchError } = await supabase
 						.from("names")
-						.select("name")
-						.in("name", uniqueNames);
+						.select("id")
+						.in(
+							"id",
+							uniqueUsers.map((user) => user.id),
+						);
 
 					if (fetchError) {
 						throw new Error("Failed to fetch data");
 					}
 
-					const existingNameSet = new Set(existingNames.map((n) => n.name));
-					const missingNames = uniqueNames.filter(
-						(name) => !existingNameSet.has(name),
+					const existingIdSet = new Set(existingIds.map((n) => n.id));
+					const missingUsers = uniqueUsers.filter(
+						(user) => !existingIdSet.has(user.id),
 					);
 
-					if (missingNames.length > 0) {
+					if (missingUsers.length > 0) {
 						const { error: insertNamesError } = await supabase
 							.from("names")
-							.insert(missingNames.map((name) => ({ name })));
+							.insert(
+								missingUsers.map((user) => ({
+									id: user.id,
+									position: user.position,
+									name: user.name,
+								})),
+							);
 						if (insertNamesError) {
 							throw new Error("Failed to upload data");
 						}
@@ -67,8 +122,9 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 
 					if (selectedType === "nordboard") {
 						const insertData = rows.map((row) => ({
-							name: row.name,
+							id: row.id,
 							date: row.date,
+							name: row.name,
 							L_max_force_n: Number.parseFloat(row.L_max_force_n),
 							R_max_force_n: Number.parseFloat(row.R_max_force_n),
 							max_imbalance_percent: Number.parseFloat(
@@ -84,8 +140,9 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 						}
 					} else if (selectedType === "forceplate") {
 						const insertData = rows.map((row) => ({
-							name: row.name,
+							id: row.id,
 							date: row.date,
+							name: row.name,
 							rsi_modified_meters_sec: Number.parseFloat(
 								row.rsi_modified_meters_sec,
 							),
@@ -111,7 +168,7 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 						}));
 
 						const { error } = await supabase
-							.from("ForcePlate_Baseline")
+							.from("ForcePlate_Weekly")
 							.insert(insertData);
 						if (error) {
 							throw new Error("Failed to upload data");
@@ -134,19 +191,48 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 		e.preventDefault();
 		setLoading(true);
 		try {
-			const { data: existingNames, error: nameCheckError } = await supabase
-				.from("names")
-				.select("name")
-				.eq("name", formData.name);
+			let id = formData.id;
+			let name = formData.name;
 
-			if (nameCheckError) {
-				throw new Error("Failed to fetch data");
-			}
+			if (id) {
+				const { data: existingUser, error: checkError } = await supabase
+					.from("names")
+					.select("name")
+					.eq("id", id)
+					.single();
 
-			if (!existingNames || existingNames.length === 0) {
+				if (checkError) {
+					throw new Error("Failed to fetch");
+				}
+
+				if (!existingUser?.name) {
+					window.alert(`User with id ${id} does not exist.`);
+					return;
+				}
+
+				name = existingUser.name;
+			} else if (name) {
+				const { data: existingUser, error: checkError } = await supabase
+					.from("names")
+					.select("id, name")
+					.eq("name", name);
+
+				if (checkError) {
+					throw new Error("Failed to fetch");
+				}
+
+				if (existingUser.length > 0) {
+					window.alert(`User with name ${name} exists, please use id.`);
+					return;
+				}
+
+				id = uuidv4();
+
 				const { error: insertNameError } = await supabase
 					.from("names")
-					.insert([{ name: formData.name }]);
+					.insert([
+						{ position: formData.position, name: formData.name, id: id },
+					]);
 
 				if (insertNameError) {
 					throw new Error("Failed to insert data");
@@ -156,7 +242,8 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 			if (selectedType === "nordboard") {
 				const { error } = await supabase.from("NordBoard").insert([
 					{
-						name: formData.name,
+						id: id,
+						name: name,
 						date: formData.date,
 						L_max_force_n: Number.parseFloat(formData.L_max_force_n),
 						R_max_force_n: Number.parseFloat(formData.R_max_force_n),
@@ -171,7 +258,8 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 			} else if (selectedType === "forceplate") {
 				const { error } = await supabase.from("ForcePlate_Baseline").insert([
 					{
-						name: formData.name,
+						id: id,
+						name: name,
 						date: formData.date,
 						rsi_modified_meters_sec: Number.parseFloat(
 							formData.rsi_modified_meters_sec,
@@ -258,12 +346,31 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 			{selectedType && (
 				<form onSubmit={submitData} className="flex flex-col space-y-4">
 					<input
+						name="id"
+						type="text"
+						placeholder="id of athlete (if new, leave blank)"
+						className="border border-gray-300 rounded px-4 py-2 w-full"
+						onChange={handleChange}
+						value={formData.id || ""}
+						disabled={formData.name}
+					/>
+					<input
 						name="name"
 						type="text"
-						placeholder="Name"
+						placeholder="Name of athlete (if old, leave blank)"
 						className="border border-gray-300 rounded px-4 py-2"
 						onChange={handleChange}
 						value={formData.name || ""}
+						disabled={formData.id}
+					/>
+					<input
+						name="position"
+						type="text"
+						placeholder="Position of athlete (if old, leave blank)"
+						className="border border-gray-300 rounded px-4 py-2"
+						onChange={handleChange}
+						value={formData.position || ""}
+						disabled={formData.id}
 					/>
 					<input
 						name="date"
@@ -314,7 +421,6 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 									onChange={handleCSVUpload}
 									className="hidden"
 								/>
-
 								<a
 									href="/example_nordboard.csv"
 									download
@@ -322,6 +428,39 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 								>
 									Download Example CSV
 								</a>
+							</div>
+							<div className="text-sm bg-gray-100 p-4 rounded-md border border-gray-300">
+								<h2 className="text-base font-semibold mb-2">Instructions:</h2>
+
+								<div>
+									<p className="font-medium">New User:</p>
+									<ul className="list-disc list-inside ml-4">
+										<li>
+											<strong>Required:</strong> <code>name</code>,{" "}
+											<code>date</code>
+										</li>
+										<li>
+											<strong>Optional:</strong> all metrics,{" "}
+											<code>position</code>
+										</li>
+										<li>
+											<strong>Do Not Include:</strong> <code>id</code>
+										</li>
+									</ul>
+								</div>
+
+								<div className="mt-2">
+									<p className="font-medium">Old User:</p>
+									<ul className="list-disc list-inside ml-4">
+										<li>
+											<strong>Required:</strong> <code>date</code>,{" "}
+											<code>id</code>
+										</li>
+										<li>
+											<strong>Optional:</strong> all metrics, name, position
+										</li>
+									</ul>
+								</div>
 							</div>
 						</>
 					)}
@@ -419,6 +558,39 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 									>
 										Download Example CSV
 									</a>
+								</div>
+							</div>
+							<div className="text-sm bg-gray-100 p-4 rounded-md border border-gray-300">
+								<h2 className="text-base font-semibold mb-2">Instructions:</h2>
+
+								<div>
+									<p className="font-medium">New User:</p>
+									<ul className="list-disc list-inside ml-4">
+										<li>
+											<strong>Required:</strong> <code>name</code>,{" "}
+											<code>date</code>
+										</li>
+										<li>
+											<strong>Optional:</strong> all metrics,{" "}
+											<code>position</code>
+										</li>
+										<li>
+											<strong>Do Not Include:</strong> <code>id</code>
+										</li>
+									</ul>
+								</div>
+
+								<div className="mt-2">
+									<p className="font-medium">Old User:</p>
+									<ul className="list-disc list-inside ml-4">
+										<li>
+											<strong>Required:</strong> <code>date</code>,{" "}
+											<code>id</code>
+										</li>
+										<li>
+											<strong>Optional:</strong> all metrics, name, position
+										</li>
+									</ul>
 								</div>
 							</div>
 						</>
