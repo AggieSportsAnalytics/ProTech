@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import Carousel from "../components/Carousel";
 import "../Index.css";
-import logo from "/aggie.png";
 import Loader from "../components/Loader";
 import supabase from "../utils/supabase";
 import RecruitmentModal from "../components/RecruitmentModal";
@@ -53,7 +52,12 @@ function Recruitment() {
 
 	return (
 		<div className="App">
-			<img src={logo} alt="Company Logo" className="logo" />
+			<img
+				src="/logo.png"
+				alt="Company Logo"
+				className="logo cursor-pointer"
+				onClick={() => (window.location.href = "/")}
+			/>
 			<h1>UC Davis Football</h1>
 
 			{/* Explanation Section */}

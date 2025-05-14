@@ -8,8 +8,6 @@ import "slick-carousel/slick/slick-theme.css";
 function Carousel({ athletes }) {
 	const [selectedPosition, setSelectedPosition] = useState(""); // Track the selected position
 
-	console.log(athletes);
-
 	// Create a list of unique positions for the dropdown
 	const positions = [
 		...new Set(athletes.map((athlete) => athlete.position)),

@@ -12,7 +12,7 @@ import {
 import supabase from "../utils/supabase";
 import Loader from "./Loader";
 
-function ForcePlate({ name }) {
+function ForcePlate({ id }) {
 	const [forcePlateData, setForcePlateData] = useState([]);
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
@@ -24,12 +24,12 @@ function ForcePlate({ name }) {
 			const { data: baselineData, error: baselineError } = await supabase
 				.from("ForcePlate_Baseline")
 				.select("*")
-				.eq("name", name);
+				.eq("id", id);
 
 			const { data: weeklyData, error: weeklyError } = await supabase
 				.from("ForcePlate_Weekly")
 				.select("*")
-				.eq("name", name);
+				.eq("id", id);
 
 			if (baselineError || weeklyError) {
 				console.error("Supabase error:", baselineError || weeklyError);
@@ -70,7 +70,7 @@ function ForcePlate({ name }) {
 		}
 
 		getForcePlateData();
-	}, [name]);
+	}, [id]);
 
 	if (error) {
 		return <div className="p-8 text-red-600">Error: {error}</div>;
@@ -82,7 +82,9 @@ function ForcePlate({ name }) {
 
 	return (
 		<>
-			<h1 className="text-2xl font-bold mb-8">Force Plate Data for {name}</h1>
+			<h1 className="text-2xl font-bold mb-8">
+				Force Plate Data for {keyCounts.name}
+			</h1>
 
 			{/* RSI Modified (full width) */}
 			<section className="relative mb-8">

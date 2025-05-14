@@ -12,7 +12,7 @@ import {
 import supabase from "../utils/supabase";
 import Loader from "./Loader";
 
-function NordBoard({ name }) {
+function NordBoard({ id }) {
 	const [nordData, setNordData] = useState([]);
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
@@ -23,7 +23,7 @@ function NordBoard({ name }) {
 			const { data, error } = await supabase
 				.from("NordBoard")
 				.select("*")
-				.eq("name", name);
+				.eq("id", id);
 
 			if (error) {
 				console.error("Supabase error:", error);
@@ -41,7 +41,7 @@ function NordBoard({ name }) {
 		}
 
 		getNordData();
-	}, [name]);
+	}, [id]);
 
 	if (error) {
 		return <div className="p-8 text-red-600">Error: {error}</div>;
@@ -53,7 +53,9 @@ function NordBoard({ name }) {
 
 	return (
 		<>
-			<h1 className="text-2xl font-bold mb-6">NordBoard Data for {name}</h1>
+			<h1 className="text-2xl font-bold mb-6">
+				{nordData?.length > 0 && <p>NordBoard Data for {nordData[0].name}</p>}
+			</h1>
 			<div className="relative mb-8">
 				{nordData.length === 0 && (
 					<div className="absolute inset-0 flex items-center justify-center bg-opacity-80 z-10">

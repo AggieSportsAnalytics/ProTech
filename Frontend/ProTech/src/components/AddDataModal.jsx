@@ -10,6 +10,7 @@ Modal.setAppElement("#root");
 function AddDataModal({ isModalOpen, setIsModalOpen }) {
 	const [selectedType, setSelectedType] = useState(null);
 	const [loading, setLoading] = useState(false);
+	const [isNew, setIsNew] = useState(true);
 
 	const [formData, setFormData] = useState({});
 
@@ -228,15 +229,13 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 
 				id = uuidv4();
 
-				const { error: insertNameError } = await supabase
-					.from("names")
-					.insert([
-						{
-							position: formData.position?.toLowerCase(),
-							name: formData.name,
-							id: id,
-						},
-					]);
+				const { error: insertNameError } = await supabase.from("names").insert([
+					{
+						position: formData.position?.toLowerCase(),
+						name: formData.name,
+						id: id,
+					},
+				]);
 
 				if (insertNameError) {
 					throw new Error("Failed to insert data");
@@ -349,33 +348,61 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 
 			{selectedType && (
 				<form onSubmit={submitData} className="flex flex-col space-y-4">
-					<input
-						name="id"
-						type="text"
-						placeholder="id of athlete (if new, leave blank)"
-						className="border border-gray-300 rounded px-4 py-2 w-full"
-						onChange={handleChange}
-						value={formData.id || ""}
-						disabled={formData.name}
-					/>
-					<input
-						name="name"
-						type="text"
-						placeholder="Name of athlete (if old, leave blank)"
-						className="border border-gray-300 rounded px-4 py-2"
-						onChange={handleChange}
-						value={formData.name || ""}
-						disabled={formData.id}
-					/>
-					<input
-						name="position"
-						type="text"
-						placeholder="Position of athlete (if old, leave blank)"
-						className="border border-gray-300 rounded px-4 py-2"
-						onChange={handleChange}
-						value={formData.position || ""}
-						disabled={formData.id}
-					/>
+					<select
+						value={isNew ? "New" : "Old"}
+						onChange={(e) => {
+							const value = e.target.value;
+							if (value === "New") {
+								setIsNew(true);
+								setFormData((prev) => ({ ...prev, id: null }));
+							} else {
+								setIsNew(false);
+								setFormData((prev) => ({
+									...prev,
+									name: null,
+									position: null,
+								}));
+							}
+						}}
+					>
+						<option value="New">New</option>
+						<option value="Old">Old</option>
+					</select>
+
+					{!isNew && (
+						<input
+							name="id"
+							type="text"
+							placeholder="id of athlete"
+							className="border border-gray-300 rounded px-4 py-2 w-full"
+							onChange={handleChange}
+							value={formData.id || ""}
+							disabled={formData.name}
+						/>
+					)}
+
+					{isNew && (
+						<>
+							<input
+								name="name"
+								type="text"
+								placeholder="Name of athlete"
+								className="border border-gray-300 rounded px-4 py-2"
+								onChange={handleChange}
+								value={formData.name || ""}
+								disabled={formData.id}
+							/>
+							<input
+								name="position"
+								type="text"
+								placeholder="Position of athlete"
+								className="border border-gray-300 rounded px-4 py-2"
+								onChange={handleChange}
+								value={formData.position || ""}
+								disabled={formData.id}
+							/>
+						</>
+					)}
 					<input
 						name="date"
 						type="date"
@@ -432,39 +459,6 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 								>
 									Download Example CSV
 								</a>
-							</div>
-							<div className="text-sm bg-gray-100 p-4 rounded-md border border-gray-300">
-								<h2 className="text-base font-semibold mb-2">Instructions:</h2>
-
-								<div>
-									<p className="font-medium">New User:</p>
-									<ul className="list-disc list-inside ml-4">
-										<li>
-											<strong>Required:</strong> <code>name</code>,{" "}
-											<code>date</code>
-										</li>
-										<li>
-											<strong>Optional:</strong> all metrics,{" "}
-											<code>position</code>
-										</li>
-										<li>
-											<strong>Do Not Include:</strong> <code>id</code>
-										</li>
-									</ul>
-								</div>
-
-								<div className="mt-2">
-									<p className="font-medium">Old User:</p>
-									<ul className="list-disc list-inside ml-4">
-										<li>
-											<strong>Required:</strong> <code>date</code>,{" "}
-											<code>id</code>
-										</li>
-										<li>
-											<strong>Optional:</strong> all metrics, name, position
-										</li>
-									</ul>
-								</div>
 							</div>
 						</>
 					)}
@@ -564,39 +558,6 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 									</a>
 								</div>
 							</div>
-							<div className="text-sm bg-gray-100 p-4 rounded-md border border-gray-300">
-								<h2 className="text-base font-semibold mb-2">Instructions:</h2>
-
-								<div>
-									<p className="font-medium">New User:</p>
-									<ul className="list-disc list-inside ml-4">
-										<li>
-											<strong>Required:</strong> <code>name</code>,{" "}
-											<code>date</code>
-										</li>
-										<li>
-											<strong>Optional:</strong> all metrics,{" "}
-											<code>position</code>
-										</li>
-										<li>
-											<strong>Do Not Include:</strong> <code>id</code>
-										</li>
-									</ul>
-								</div>
-
-								<div className="mt-2">
-									<p className="font-medium">Old User:</p>
-									<ul className="list-disc list-inside ml-4">
-										<li>
-											<strong>Required:</strong> <code>date</code>,{" "}
-											<code>id</code>
-										</li>
-										<li>
-											<strong>Optional:</strong> all metrics, name, position
-										</li>
-									</ul>
-								</div>
-							</div>
 						</>
 					)}
 
@@ -606,13 +567,6 @@ function AddDataModal({ isModalOpen, setIsModalOpen }) {
 							className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
 						>
 							Submit
-						</button>
-						<button
-							type="button"
-							onClick={handleClose}
-							className="text-gray-500 hover:text-gray-700"
-						>
-							Cancel
 						</button>
 						<button
 							type="button"
