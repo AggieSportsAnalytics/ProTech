@@ -209,6 +209,21 @@ const AthleteComparisonChart = ({ id }) => {
 				pointBackgroundColor: "rgb(54, 162, 235)",
 				fill: false,
 			},
+			{
+				label: "Average for position",
+				data: [
+					normalize(1, 0, 2),
+					normalize(1, 0, 2),
+					normalize(1, 0, 2),
+					normalize(1, 0, 2),
+					normalize(1, 0, 2),
+					normalize(1, 0, 2),
+				],
+				backgroundColor: "rgba(153, 102, 255, 0.2)",
+				borderColor: "rgb(153, 102, 255)",
+				pointBackgroundColor: "rgb(153, 102, 255)",
+				fill: false,
+			},
 		].filter(Boolean),
 	};
 
