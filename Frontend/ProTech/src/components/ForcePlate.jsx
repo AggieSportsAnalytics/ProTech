@@ -83,7 +83,7 @@ function ForcePlate({ id }) {
 	return (
 		<>
 			<h1 className="text-2xl font-bold mb-8">
-				Force Plate Data for {keyCounts.name}
+				Force Plate Data for {forcePlateData[0].name}
 			</h1>
 
 			{/* RSI Modified (full width) */}
