@@ -83,7 +83,9 @@ function ForcePlate({ id }) {
 	return (
 		<>
 			<h1 className="text-2xl font-bold mb-8">
-				Force Plate Data for {forcePlateData[0].name}
+				{forcePlateData?.length > 0 && (
+					<p>Force Plate Data for {forcePlateData[0].name}</p>
+				)}
 			</h1>
 
 			{/* RSI Modified (full width) */}
