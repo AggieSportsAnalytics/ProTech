@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import supabase from "../utils/supabase";
 
 function AthleteCard({ athlete }) {
 	const availableYears = useMemo(
@@ -14,11 +15,14 @@ function AthleteCard({ athlete }) {
 				return;
 			}
 			try {
-				const urls = availableYears.map(
-					(year) =>
-						`${import.meta.env.VITE_S3_BUCKET_URL}/${athlete.id}/${year}.jpg`,
+				const urls = await Promise.all(
+					availableYears.map(async (year) => {
+						const { data } = supabase.storage
+							.from("athlete-images")
+							.getPublicUrl(`${athlete.id}/${year}.jpg`);
+						return data.publicUrl;
+					})
 				);
-
 				setImageUrls(urls);
 			} catch (error) {
 				console.error(error);
