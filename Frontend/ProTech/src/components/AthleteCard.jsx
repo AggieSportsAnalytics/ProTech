@@ -8,103 +8,158 @@ function AthleteCard({ athlete }) {
 	);
 	const [imageUrls, setImageUrls] = useState([]);
 	const [copied, setCopied] = useState(false);
+	const [imageLoading, setImageLoading] = useState(true);
 
 	useEffect(() => {
 		const getImages = async () => {
 			if (!athlete?.id || !availableYears) {
 				return;
 			}
+			setImageLoading(true);
 			try {
-				const urls = await Promise.all(
+				const imageResults = await Promise.all(
 					availableYears.map(async (year) => {
-						const { data } = supabase.storage
-							.from("athlete-images")
-							.getPublicUrl(`${athlete.id}/${year}.jpg`);
-						return data.publicUrl;
+						// Try different image formats
+						const formats = ['jpg', 'jpeg', 'png'];
+						for (const format of formats) {
+							const path = `${athlete.id}/${year}.${format}`;
+							const { data: urlData } = supabase.storage
+								.from("athlete-images")
+								.getPublicUrl(path);
+							
+							// Check if image exists by trying to load it
+							try {
+								const response = await fetch(urlData.publicUrl, { method: 'HEAD' });
+								if (response.ok) {
+									return { year, url: urlData.publicUrl };
+								}
+							} catch (error) {
+								console.log(`Failed to load image for ${year} in ${format} format`);
+							}
+						}
+						return { year, url: null }; // Return null if no format works
 					})
 				);
-				setImageUrls(urls);
+
+				// Filter out failed images and set URLs
+				const validUrls = imageResults
+					.filter(result => result.url !== null)
+					.map(result => result.url);
+				
+				setImageUrls(validUrls);
 			} catch (error) {
-				console.error(error);
+				console.error('Error fetching images:', error);
+				setImageUrls([]);
+			} finally {
+				setImageLoading(false);
 			}
 		};
 
 		getImages();
-	}, [athlete]);
+	}, [athlete, availableYears]);
 
 	return (
-		<div className="athlete-card">
-			<h3>{athlete.name}</h3>
-			<div
-				className="text-xs text-gray-500"
-				onClick={(e) => {
-					e.stopPropagation();
-					navigator.clipboard.writeText(athlete.id);
-					setCopied(true);
-					setTimeout(() => {
-						setCopied(false);
-					}, 1000);
-				}}
-			>
-				{!copied ? <p>Click to Copy ID: {athlete.id}</p> : <p>Copied!</p>}
-			</div>
-			<p>Position: {athlete.position}</p>
-			<p>Height: {athlete.height}</p>
-			<p>Wing: {athlete.wing}</p>
-			<p>Hand: {athlete.hand}</p>
-
-			{/* Image carousel or grid */}
-			<div className="athlete-images">
-				{imageUrls.map((image, index) => (
-					<div key={index} className="image-container">
-						<img
-							src={image}
-							alt={athlete.name}
-							className="athlete-image"
-							loading="lazy"
-						/>
-						<p className="image-year">{availableYears[index]}</p>
+		<div className="bg-white">
+			{/* Header Section */}
+			<div className="flex justify-between items-start my-6">
+				<div>
+					<h2 className="text-3xl font-bold text-[#0B1340] mb-2">{athlete.name}</h2>
+					<div className="flex gap-6 text-gray-600">
+						<p><span className="font-medium">Position:</span> {athlete.position}</p>
+						<p><span className="font-medium">Height:</span> {athlete.height}</p>
+						<p><span className="font-medium">Wing:</span> {athlete.wing}</p>
+						<p><span className="font-medium">Hand:</span> {athlete.hand}</p>
 					</div>
-				))}
+				</div>
+				<div
+					className="text-sm text-gray-500 cursor-pointer hover:text-[#B4975A]"
+					onClick={(e) => {
+						e.stopPropagation();
+						navigator.clipboard.writeText(athlete.id);
+						setCopied(true);
+						setTimeout(() => setCopied(false), 1000);
+					}}
+				>
+					{!copied ? <p>ID: {athlete.id}</p> : <p>Copied!</p>}
+				</div>
 			</div>
 
-			{/* Stats table */}
-			<table className="stats-table">
-				<thead>
-					<tr>
-						<th>Year</th>
-						<th>Body Weight</th>
-						<th>Vertical Jump</th>
-						<th>Broad Jump</th>
-						<th>10-Yard Dash</th>
-						<th>Flying 10</th>
-						<th>40-Yard Dash</th>
-						<th>Pro Agility</th>
-						<th>L-Drill</th>
-						<th>Hang Clean</th>
-						<th>Back Squat</th>
-						<th>Incline Bench</th>
-					</tr>
-				</thead>
-				<tbody>
-					{athlete.stats.map((stat) => (
-						<tr key={stat.year}>
-							<td>{stat.year}</td>
-							<td>{stat.bodyWeight}</td>
-							<td>{stat.verticalJump}</td>
-							<td>{stat.broadJump}</td>
-							<td>{stat.tenYard}</td>
-							<td>{stat.flyingTen}</td>
-							<td>{stat.fortyYard}</td>
-							<td>{stat.proAgility}</td>
-							<td>{stat.lDrill}</td>
-							<td>{stat.hangClean}</td>
-							<td>{stat.backSquat}</td>
-							<td>{stat.inclineBench}</td>
-						</tr>
-					))}
-				</tbody>
-			</table>
+			{/* Images Section */}
+			<div className="mb-8 overflow-x-auto">
+				<h3 className="text-xl font-semibold text-[#0B1340] mb-4">Progress Photos</h3>
+				{imageLoading ? (
+					<div className="flex items-center justify-center h-[50vh]">
+						<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0B1340]"></div>
+					</div>
+				) : imageUrls.length > 0 ? (
+					<div className="flex space-x-6 pb-4 justify-center">
+						{imageUrls.map((image, index) => (
+							<div key={index} className="relative flex-shrink-0 rounded-lg shadow-md">
+								<img
+									src={image}
+									alt={`${athlete.name} - ${availableYears[index]}`}
+									className="h-[50vh] w-auto"
+									loading="lazy"
+									onError={(e) => {
+										e.target.onerror = null;
+										e.target.src = '/aggie.png'; // fallback image
+									}}
+								/>
+								<div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white py-2 px-3">
+									<p className="text-sm font-medium">{availableYears[index]}</p>
+								</div>
+							</div>
+						))}
+					</div>
+				) : (
+					<div className="flex items-center justify-center h-[50vh] text-gray-500">
+						No photos available
+					</div>
+				)}
+			</div>
+
+			{/* Stats Section */}
+			<div>
+				<h3 className="text-xl font-semibold text-[#0B1340] mb-4">Performance Stats</h3>
+				<div className="overflow-x-auto">
+					<table className="min-w-full divide-y divide-gray-200">
+						<thead className="bg-gray-50">
+							<tr>
+								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
+								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Body Weight</th>
+								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vertical Jump</th>
+								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Broad Jump</th>
+								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">10-Yard Dash</th>
+								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Flying 10</th>
+								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">40-Yard Dash</th>
+								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pro Agility</th>
+								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">L-Drill</th>
+								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hang Clean</th>
+								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Back Squat</th>
+								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Incline Bench</th>
+							</tr>
+						</thead>
+						<tbody className="bg-white divide-y divide-gray-200">
+							{athlete.stats.map((stat) => (
+								<tr key={stat.year} className="hover:bg-gray-50">
+									<td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{stat.year}</td>
+									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.bodyWeight}</td>
+									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.verticalJump}</td>
+									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.broadJump}</td>
+									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.tenYard}</td>
+									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.flyingTen}</td>
+									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.fortyYard}</td>
+									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.proAgility}</td>
+									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.lDrill}</td>
+									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.hangClean}</td>
+									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.backSquat}</td>
+									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.inclineBench}</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+			</div>
 		</div>
 	);
 }
