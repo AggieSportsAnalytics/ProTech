@@ -1,35 +1,11 @@
 function Loader() {
 	return (
-		<div className="fixed inset-0 flex items-center justify-center backdrop-blur-[2px] z-50">
-			<div className="flex items-end space-x-1 h-12">
-				{[...Array(5)].map((val, i) => (
-					<div
-						key={`${i}_${val}`}
-						className="w-2 bg-blue-500 rounded-full animate-[bounce_1s_ease-in-out_infinite]"
-						style={{
-							height: "60%",
-							animationDelay: `${i * 0.15}s`,
-						}}
-					>
-						<div className="w-full h-full bg-gradient-to-t from-blue-600 to-blue-400 rounded-full opacity-80" />
-					</div>
-				))}
-			</div>
-
-			<div className="absolute mt-14 flex items-start space-x-1 h-12 opacity-20 scale-y-[-0.4] blur-sm">
-				{[...Array(5)].map((val, i) => (
-					<div
-						key={`${i}_${val}`}
-						className="w-2 bg-blue-500 rounded-full animate-[bounce_1s_ease-in-out_infinite]"
-						style={{
-							height: "60%",
-							animationDelay: `${i * 0.15}s`,
-						}}
-					>
-						<div className="w-full h-full bg-gradient-to-t from-blue-600 to-blue-400 rounded-full" />
-					</div>
-				))}
-			</div>
+		<div className="fixed inset-0 flex items-center justify-center bg-white z-50">
+			<img 
+				src="/logo.png" 
+				alt="Loading..." 
+				className="h-24 w-auto animate-fast-pulse"
+			/>
 		</div>
 	);
 }

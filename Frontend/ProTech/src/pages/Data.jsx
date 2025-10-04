@@ -111,33 +111,34 @@ function Data() {
 
 	return (
 		<>
-			<img
-				src="/logo.png"
-				alt="Company Logo"
-				className="logo cursor-pointer"
-				onClick={() => (window.location.href = "/")}
-			/>
-			<div className="max-w-6xl mx-auto p-6">
-				<div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-					<h1 className="text-3xl font-bold text-gray-800 mb-4 md:mb-0">
-						Athletes
-					</h1>
+			<div className="bg-white shadow-sm border-b border-gray-200">
+				<div className="max-w-7xl mx-auto px-8 py-4">
+					<div className="flex items-center justify-between">
+						<h1 
+							onClick={() => window.location.href = '/'}
+							className="text-2xl font-bold text-[#0B1340] cursor-pointer hover:text-[#B4975A] transition-colors"
+						>
+							ProTech
+						</h1>
 
-					{/* Search Bar */}
-					<div className="relative w-full md:w-64">
-						<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-							<FiSearch className="h-5 w-5 text-gray-400" />
+						{/* Search Bar */}
+						<div className="relative w-96">
+							<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+								<FiSearch className="h-5 w-5 text-gray-400" />
+							</div>
+							<input
+								type="text"
+								className="block w-full pl-10 pr-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-[#0B1340] focus:border-[#0B1340]"
+								placeholder="Search athletes..."
+								value={searchQuery}
+								onChange={(e) => setSearchQuery(e.target.value)}
+							/>
 						</div>
-						<input
-							type="text"
-							className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-							placeholder="Search athletes..."
-							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
-						/>
 					</div>
 				</div>
+			</div>
 
+			<div className="max-w-7xl mx-auto px-8 py-6">
 				{loading ? (
 					<div className="flex justify-center items-center h-64">
 						<Loader />
@@ -157,56 +158,49 @@ function Data() {
 							<button
 								type="button"
 								onClick={() => setIsModalOpen(true)}
-								className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+								className="inline-flex items-center px-6 py-3 border-2 border-[#0B1340] text-lg font-medium rounded-lg text-[#0B1340] hover:bg-[#0B1340] hover:text-white transition-colors"
 							>
 								<span className="mr-2">+</span>
-								Add athlete
+								Add Athlete
 							</button>
 						</div>
 					</div>
 				) : (
-					<div className="bg-white shadow rounded-lg overflow-hidden">
-						<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
+					<div className="mt-8">
+						<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 							{filteredData.map((item) => (
 								<div
 									key={item.id}
-									className="group relative bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-200 hover:border-blue-300"
+									className="group relative bg-white rounded-lg border-2 border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-200 hover:border-[#B4975A]"
 								>
 									<div
 										onClick={() => navigate(`/data/${item.id}`)}
 										className="p-4 cursor-pointer"
 									>
-										<div className="flex items-center">
-											<div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-												<span className="text-blue-600 font-semibold">
-													{item.name.charAt(0).toUpperCase()}
-												</span>
-											</div>
-											<div>
-												<h3 className="text-lg font-medium text-gray-900 truncate">
-													{item.name}
-												</h3>
-												<div
-													className="mt-2 text-xs text-gray-500"
-													onClick={(e) => {
-														e.stopPropagation();
-														navigator.clipboard.writeText(item.id);
-														setCopied((prev) => ({ ...prev, [item.id]: true }));
-														setTimeout(() => {
-															setCopied((prev) => ({
-																...prev,
-																[item.id]: false,
-															}));
-														}, 1000);
-													}}
-												>
-													{!copied?.[item.id] ? (
-														<p>Click to Copy ID: {item.id}</p>
-													) : (
-														<p>Copied!</p>
-													)}
-												</div>
-											</div>
+										<div className="flex flex-col">
+											<h3 className="text-lg font-semibold text-[#0B1340] truncate">
+												{item.name}
+											</h3>
+											{/* <div
+												className="mt-2 text-sm text-[#B4975A]"
+												onClick={(e) => {
+													e.stopPropagation();
+													navigator.clipboard.writeText(item.id);
+													setCopied((prev) => ({ ...prev, [item.id]: true }));
+													setTimeout(() => {
+														setCopied((prev) => ({
+															...prev,
+															[item.id]: false,
+														}));
+													}, 1000);
+												}}
+											>
+												{!copied?.[item.id] ? (
+													<p>Click to Copy ID: {item.id}</p>
+												) : (
+													<p>Copied!</p>
+												)}
+											</div> */}
 										</div>
 									</div>
 									<div
@@ -230,7 +224,7 @@ function Data() {
 				<button
 					onClick={() => setIsModalOpen(true)}
 					type="button"
-					className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-transform duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+					className="fixed bottom-6 right-6 bg-[#0B1340] hover:bg-[#B4975A] text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110 focus:outline-none"
 				>
 					<span className="text-3xl">+</span>
 				</button>
