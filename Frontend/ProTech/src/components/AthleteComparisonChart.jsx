@@ -162,67 +162,64 @@ const AthleteComparisonChart = ({ id }) => {
 		"40-Yard Dash",
 	];
 
-	const getNormalizedData = (athlete) => [
-		relativeNormalize(
+	const getNormalizedData = (athlete) => {
+		// Store raw values for tooltips
+		const rawValues = [
 			parseNumber(athlete.inclineBench, " lbs"),
-			averages.inclineBench,
-		),
-		relativeNormalize(
 			parseNumber(athlete.backSquat, " lbs"),
-			averages.backSquat,
-		),
-		relativeNormalize(
 			parseNumber(athlete.hangClean, " lbs"),
-			averages.hangClean,
-		),
-		relativeNormalize(parseNumber(athlete.tenYard, "s"), averages.tenYard, 2),
-		relativeNormalize(
+			parseNumber(athlete.tenYard, "s"),
 			parseNumber(athlete.flyingTen, "s"),
-			averages.flyingTen,
-			2,
-		),
-		relativeNormalize(
 			parseNumber(athlete.fortyYard, "s"),
-			averages.fortyYard,
-			2,
-		),
-	];
+		];
+
+		// Store normalized values for display
+		const normalizedValues = [
+			relativeNormalize(rawValues[0], averages.inclineBench),
+			relativeNormalize(rawValues[1], averages.backSquat),
+			relativeNormalize(rawValues[2], averages.hangClean),
+			relativeNormalize(rawValues[3], averages.tenYard, 2),
+			relativeNormalize(rawValues[4], averages.flyingTen, 2),
+			relativeNormalize(rawValues[5], averages.fortyYard, 2),
+		];
+
+		return { normalizedValues, rawValues };
+	};
 
 	if (loading || !mainAthlete.name) return <Loader />;
 
+	const athleteData = getNormalizedData(mainAthlete);
+	const comparisonData = comparisonAthlete ? getNormalizedData(comparisonAthlete) : null;
+	
 	const data = {
 		labels,
 		datasets: [
 			{
 				label: mainAthlete.name,
-				data: getNormalizedData(mainAthlete),
-				backgroundColor: "rgba(255, 99, 132, 0.2)",
-				borderColor: "rgb(255, 99, 132)",
-				pointBackgroundColor: "rgb(255, 99, 132)",
+				data: athleteData.normalizedValues,
+				backgroundColor: "rgba(11, 19, 64, 0.2)",
+				borderColor: "rgb(11, 19, 64)",
+				pointBackgroundColor: "rgb(11, 19, 64)",
 				fill: true,
+				rawValues: athleteData.rawValues,
 			},
-			comparisonAthlete && {
+			comparisonData && {
 				label: comparisonAthlete.name,
-				data: getNormalizedData(comparisonAthlete),
-				backgroundColor: "rgba(54, 162, 235, 0.2)",
-				borderColor: "rgb(54, 162, 235)",
-				pointBackgroundColor: "rgb(54, 162, 235)",
-				fill: false,
+				data: comparisonData.normalizedValues,
+				backgroundColor: "rgba(180, 151, 90, 0.2)",
+				borderColor: "rgb(180, 151, 90)",
+				pointBackgroundColor: "rgb(180, 151, 90)",
+				fill: true,
+				rawValues: comparisonData.rawValues,
 			},
 			{
-				label: "Average for position",
-				data: [
-					normalize(1, 0, 2),
-					normalize(1, 0, 2),
-					normalize(1, 0, 2),
-					normalize(1, 0, 2),
-					normalize(1, 0, 2),
-					normalize(1, 0, 2),
-				],
-				backgroundColor: "rgba(153, 102, 255, 0.2)",
-				borderColor: "rgb(153, 102, 255)",
-				pointBackgroundColor: "rgb(153, 102, 255)",
-				fill: false,
+				label: "Position Average",
+				data: [5, 5, 5, 5, 5, 5], // Center point on the 0-10 scale
+				backgroundColor: "rgba(128, 128, 128, 0.2)",
+				borderColor: "rgb(128, 128, 128)",
+				pointBackgroundColor: "rgb(128, 128, 128)",
+				fill: true,
+				rawValues: Object.values(averages),
 			},
 		].filter(Boolean),
 	};
@@ -238,27 +235,35 @@ const AthleteComparisonChart = ({ id }) => {
 		},
 		plugins: {
 			legend: { position: "top" },
+			tooltip: {
+				callbacks: {
+					label: (context) => {
+						const label = context.dataset.label;
+						const rawValue = context.dataset.rawValues[context.dataIndex];
+						const unit = context.dataIndex < 3 ? " lbs" : "s";
+						return `${label}: ${rawValue.toFixed(2)}${unit}`;
+					}
+				}
+			}
 		},
 	};
 
 	return (
 		<div className="p-4 max-w-xl mx-auto">
-			<h2 className="text-center text-xl font-semibold mb-4">
-				Compare Athletes at {mainAthlete.position}
-			</h2>
-
-			<select
-				value={selectedComparisonId || ""}
-				onChange={(e) => setSelectedComparisonId(e.target.value)}
-				className="w-full max-w-sm mx-auto block mb-6 p-2 border rounded"
-			>
-				{comparisonAthletes.map((player) => (
-					<option key={player.id} value={player.id}>
-						{player.name}
-					</option>
-				))}
-			</select>
-
+			<div className="flex justify-end mb-4">
+				<select
+					value={selectedComparisonId || ""}
+					onChange={(e) => setSelectedComparisonId(e.target.value || null)}
+					className="w-64 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0B1340] focus:border-transparent"
+				>
+					<option value="">Compare with another player...</option>
+					{comparisonAthletes.map((player) => (
+						<option key={player.id} value={player.id}>
+							{player.name}
+						</option>
+					))}
+				</select>
+			</div>
 			<Radar data={data} options={options} />
 		</div>
 	);

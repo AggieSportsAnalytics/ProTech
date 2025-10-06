@@ -235,13 +235,6 @@ function RecruitmentModal({ isModalOpen, setIsModalOpen }) {
 					>
 						New
 					</button>
-					<button
-						type="button"
-						onClick={handleClose}
-						className="text-gray-500 hover:text-gray-700 mt-4"
-					>
-						Cancel
-					</button>
 				</div>
 			)}
 

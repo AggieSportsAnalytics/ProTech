@@ -121,18 +121,30 @@ function Data() {
 							ProTech
 						</h1>
 
-						{/* Search Bar */}
-						<div className="relative w-96">
-							<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-								<FiSearch className="h-5 w-5 text-gray-400" />
+						<div className="flex items-center space-x-4">
+							{/* Search Bar */}
+							<div className="relative w-96">
+								<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+									<FiSearch className="h-5 w-5 text-gray-400" />
+								</div>
+								<input
+									type="text"
+									className="block w-full pl-10 pr-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-[#0B1340] focus:border-[#0B1340]"
+									placeholder="Search athletes..."
+									value={searchQuery}
+									onChange={(e) => setSearchQuery(e.target.value)}
+								/>
 							</div>
-							<input
-								type="text"
-								className="block w-full pl-10 pr-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-[#0B1340] focus:border-[#0B1340]"
-								placeholder="Search athletes..."
-								value={searchQuery}
-								onChange={(e) => setSearchQuery(e.target.value)}
-							/>
+							
+							{/* Add Button */}
+							<button
+								onClick={() => setIsModalOpen(true)}
+								type="button"
+								className="bg-[#B4975A] hover:bg-[#8B7443] text-white rounded-lg px-4 py-2 text-sm transition-colors duration-200 flex items-center"
+							>
+								<span className="mr-1">+</span>
+								Add
+							</button>
 						</div>
 					</div>
 				</div>
@@ -181,6 +193,9 @@ function Data() {
 											<h3 className="text-lg font-semibold text-[#0B1340] truncate">
 												{item.name}
 											</h3>
+											<p className="text-sm text-gray-500">
+												{item.position}
+											</p>
 											{/* <div
 												className="mt-2 text-sm text-[#B4975A]"
 												onClick={(e) => {
@@ -221,13 +236,6 @@ function Data() {
 					</div>
 				)}
 
-				<button
-					onClick={() => setIsModalOpen(true)}
-					type="button"
-					className="fixed bottom-6 right-6 bg-[#0B1340] hover:bg-[#B4975A] text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110 focus:outline-none"
-				>
-					<span className="text-3xl">+</span>
-				</button>
 				<AddDataModal
 					isModalOpen={isModalOpen}
 					setIsModalOpen={setIsModalOpen}

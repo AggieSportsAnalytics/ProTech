@@ -4,7 +4,7 @@ function Loader() {
 			<img 
 				src="/logo.png" 
 				alt="Loading..." 
-				className="h-24 w-auto animate-fast-pulse"
+				className="h-24 w-auto animate-pulse"
 			/>
 		</div>
 	);
