@@ -13,6 +13,8 @@ function Recruitment() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState("");
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [selectedType, setSelectedType] = useState(null);
+	const [formData, setFormData] = useState({});
 
 	useEffect(() => {
 		const getAllPlayers = async () => {
@@ -132,7 +134,12 @@ function Recruitment() {
 
 						{/* Athlete Display */}
 						<div>
-							<AthleteCard athlete={filteredAthletes[currentIndex]} />
+							<AthleteCard 
+								athlete={filteredAthletes[currentIndex]} 
+								setIsModalOpen={setIsModalOpen}
+								setSelectedType={setSelectedType}
+								setFormData={setFormData}
+							/>
 						</div>
 
 						{/* Page Indicator */}
@@ -148,6 +155,10 @@ function Recruitment() {
 			<RecruitmentModal
 				isModalOpen={isModalOpen}
 				setIsModalOpen={setIsModalOpen}
+				selectedType={selectedType}
+				setSelectedType={setSelectedType}
+				formData={formData}
+				setFormData={setFormData}
 			/>
 		</div>
 	);

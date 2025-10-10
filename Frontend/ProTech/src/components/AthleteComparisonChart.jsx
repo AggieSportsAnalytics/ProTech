@@ -39,9 +39,6 @@ const relativeNormalize = (value, avg, maxRatio = 2) => {
 const AthleteComparisonChart = ({ id }) => {
 	const [loading, setLoading] = useState(false);
 	const [mainAthlete, setMainAthlete] = useState({});
-	const [comparisonAthletes, setComparisonAthletes] = useState([]);
-	const [selectedComparisonId, setSelectedComparisonId] = useState(null);
-	const [comparisonAthlete, setComparisonAthlete] = useState(null);
 	const [averages, setAverages] = useState({});
 
 	function getLatestStats(stats) {
@@ -132,26 +129,10 @@ const AthleteComparisonChart = ({ id }) => {
 			const position = await fetchAndSetAthlete(id, setMainAthlete);
 			await calcAverages(position);
 
-			const { data, error } = await supabase
-				.from("Athlete_Data")
-				.select("name, id")
-				.eq("position", position)
-				.neq("id", id); // exclude current athlete
-
-			if (!error && data) {
-				setComparisonAthletes(data);
-				setSelectedComparisonId(data[0]?.id);
-			}
 			setLoading(false);
 		};
 		init();
 	}, [id]);
-
-	useEffect(() => {
-		if (selectedComparisonId) {
-			fetchAndSetAthlete(selectedComparisonId, setComparisonAthlete);
-		}
-	}, [selectedComparisonId]);
 
 	const labels = [
 		"Incline Bench",
@@ -189,7 +170,6 @@ const AthleteComparisonChart = ({ id }) => {
 	if (loading || !mainAthlete.name) return <Loader />;
 
 	const athleteData = getNormalizedData(mainAthlete);
-	const comparisonData = comparisonAthlete ? getNormalizedData(comparisonAthlete) : null;
 	
 	const data = {
 		labels,
@@ -203,15 +183,6 @@ const AthleteComparisonChart = ({ id }) => {
 				fill: true,
 				rawValues: athleteData.rawValues,
 			},
-			comparisonData && {
-				label: comparisonAthlete.name,
-				data: comparisonData.normalizedValues,
-				backgroundColor: "rgba(180, 151, 90, 0.2)",
-				borderColor: "rgb(180, 151, 90)",
-				pointBackgroundColor: "rgb(180, 151, 90)",
-				fill: true,
-				rawValues: comparisonData.rawValues,
-			},
 			{
 				label: "Position Average",
 				data: [5, 5, 5, 5, 5, 5], // Center point on the 0-10 scale
@@ -221,7 +192,7 @@ const AthleteComparisonChart = ({ id }) => {
 				fill: true,
 				rawValues: Object.values(averages),
 			},
-		].filter(Boolean),
+		],
 	};
 
 	const options = {
@@ -250,20 +221,6 @@ const AthleteComparisonChart = ({ id }) => {
 
 	return (
 		<div className="p-4 max-w-xl mx-auto">
-			<div className="flex justify-end mb-4">
-				<select
-					value={selectedComparisonId || ""}
-					onChange={(e) => setSelectedComparisonId(e.target.value || null)}
-					className="w-64 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0B1340] focus:border-transparent"
-				>
-					<option value="">Compare with another player...</option>
-					{comparisonAthletes.map((player) => (
-						<option key={player.id} value={player.id}>
-							{player.name}
-						</option>
-					))}
-				</select>
-			</div>
 			<Radar data={data} options={options} />
 		</div>
 	);
