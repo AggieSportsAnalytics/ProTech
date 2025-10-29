@@ -140,18 +140,22 @@ const AthleteComparisonChart = ({ id }) => {
 
 			if (!error && data) {
 				setComparisonAthletes(data);
-				setSelectedComparisonId(data[0]?.id);
+				// Do not preselect a comparison athlete; let the user choose
+				setSelectedComparisonId(null);
 			}
 			setLoading(false);
 		};
 		init();
 	}, [id]);
 
-	useEffect(() => {
-		if (selectedComparisonId) {
-			fetchAndSetAthlete(selectedComparisonId, setComparisonAthlete);
-		}
-	}, [selectedComparisonId]);
+useEffect(() => {
+	if (selectedComparisonId) {
+		fetchAndSetAthlete(selectedComparisonId, setComparisonAthlete);
+	} else {
+		// Clear any previously selected comparison athlete when set to "No comparison"
+		setComparisonAthlete(null);
+	}
+}, [selectedComparisonId]);
 
 	const labels = [
 		"Incline Bench",
@@ -256,7 +260,7 @@ const AthleteComparisonChart = ({ id }) => {
 					onChange={(e) => setSelectedComparisonId(e.target.value || null)}
 					className="w-64 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0B1340] focus:border-transparent"
 				>
-					<option value="">Compare with another player...</option>
+					<option value="">No comparison</option>
 					{comparisonAthletes.map((player) => (
 						<option key={player.id} value={player.id}>
 							{player.name}

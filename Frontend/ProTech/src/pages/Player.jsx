@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import NordBoard from "../components/NordBoard";
 import ForcePlate from "../components/ForcePlate";
@@ -8,6 +8,7 @@ import Loader from "../components/Loader";
 
 function Data() {
 	const { id } = useParams();
+	const navigate = useNavigate();
 	const [athlete, setAthlete] = useState(null);
 	const [loading, setLoading] = useState(true);
 
@@ -39,6 +40,12 @@ function Data() {
 		<div className="max-w-7xl mx-auto px-8 py-6">
 			{/* Header */}
 			<div className="mb-8">
+				<button
+					onClick={() => navigate('/data')}
+					className="!m-0 mb-10 inline-flex items-center pr-4 pl-0 py-4 rounded-md text-sm font-medium text-white bg-[#0B1340] hover:bg-[#0b1340cc]"
+				>
+					← Back
+				</button>
 				<h1 className="text-3xl font-bold text-[#0B1340]">{athlete.name}</h1>
 				<p className="text-gray-500 mt-1">{athlete.position}</p>
 			</div>

@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import supabase from "../utils/supabase";
 
 function AthleteCard({ athlete }) {
+	const navigate = useNavigate();
 	const availableYears = useMemo(
 		() => athlete.stats.map((stat) => stat.year),
 		[athlete],
@@ -71,16 +73,27 @@ function AthleteCard({ athlete }) {
 						<p><span className="font-medium">Hand:</span> {athlete.hand}</p>
 					</div>
 				</div>
-				<div
-					className="text-sm text-gray-500 cursor-pointer hover:text-[#B4975A]"
-					onClick={(e) => {
-						e.stopPropagation();
-						navigator.clipboard.writeText(athlete.id);
-						setCopied(true);
-						setTimeout(() => setCopied(false), 1000);
-					}}
-				>
-					{!copied ? <p>ID: {athlete.id}</p> : <p>Copied!</p>}
+				<div className="flex flex-col items-end gap-2">
+					<div
+						className="text-sm text-gray-500 cursor-pointer hover:text-[#B4975A]"
+						onClick={(e) => {
+							e.stopPropagation();
+							navigator.clipboard.writeText(athlete.id);
+							setCopied(true);
+							setTimeout(() => setCopied(false), 1000);
+						}}
+					>
+						{!copied ? <p>ID: {athlete.id}</p> : <p>Copied!</p>}
+					</div>
+					<button
+						onClick={(e) => {
+							e.stopPropagation();
+							navigate(`/data/${athlete.id}`);
+						}}
+						className="px-4 py-2 rounded-md text-white bg-[#0B1340] hover:bg-[#0b1340cc] text-sm"
+					>
+						View Data
+					</button>
 				</div>
 			</div>
 

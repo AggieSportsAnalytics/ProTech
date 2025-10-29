@@ -47,14 +47,17 @@ function Recruitment() {
 		return <div className="p-8">No players found.</div>;
 	}
 
-	// Filter athletes by position and search query
-	const filteredAthletes = athletes.filter((athlete) => {
-		const matchesPosition = !selectedPosition || athlete.position === selectedPosition;
-		const matchesSearch = !searchQuery || 
-			athlete.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			athlete.position.toLowerCase().includes(searchQuery.toLowerCase());
-		return matchesPosition && matchesSearch;
-	});
+	// Filter athletes by position and search query, then sort alphabetically by name
+	const filteredAthletes = athletes
+		.filter((athlete) => {
+			const matchesPosition = !selectedPosition || athlete.position === selectedPosition;
+			const matchesSearch =
+				!searchQuery ||
+				athlete.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+				athlete.position.toLowerCase().includes(searchQuery.toLowerCase());
+			return matchesPosition && matchesSearch;
+		})
+		.sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
 
 	return (
 		<div className="min-h-screen bg-white">
