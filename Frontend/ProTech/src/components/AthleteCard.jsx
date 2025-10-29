@@ -9,7 +9,6 @@ function AthleteCard({ athlete }) {
 		[athlete],
 	);
 	const [imageUrls, setImageUrls] = useState([]);
-	const [copied, setCopied] = useState(false);
 	const [imageLoading, setImageLoading] = useState(true);
 
 	useEffect(() => {

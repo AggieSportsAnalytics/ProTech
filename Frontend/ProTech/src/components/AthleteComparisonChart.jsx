@@ -39,9 +39,6 @@ const relativeNormalize = (value, avg, maxRatio = 2) => {
 const AthleteComparisonChart = ({ id }) => {
 	const [loading, setLoading] = useState(false);
 	const [mainAthlete, setMainAthlete] = useState({});
-	const [comparisonAthletes, setComparisonAthletes] = useState([]);
-	const [selectedComparisonId, setSelectedComparisonId] = useState(null);
-	const [comparisonAthlete, setComparisonAthlete] = useState(null);
 	const [averages, setAverages] = useState({});
 
 	function getLatestStats(stats) {
@@ -193,7 +190,6 @@ useEffect(() => {
 	if (loading || !mainAthlete.name) return <Loader />;
 
 	const athleteData = getNormalizedData(mainAthlete);
-	const comparisonData = comparisonAthlete ? getNormalizedData(comparisonAthlete) : null;
 	
 	const data = {
 		labels,
@@ -207,15 +203,6 @@ useEffect(() => {
 				fill: true,
 				rawValues: athleteData.rawValues,
 			},
-			comparisonData && {
-				label: comparisonAthlete.name,
-				data: comparisonData.normalizedValues,
-				backgroundColor: "rgba(180, 151, 90, 0.2)",
-				borderColor: "rgb(180, 151, 90)",
-				pointBackgroundColor: "rgb(180, 151, 90)",
-				fill: true,
-				rawValues: comparisonData.rawValues,
-			},
 			{
 				label: "Position Average",
 				data: [5, 5, 5, 5, 5, 5], // Center point on the 0-10 scale
@@ -225,7 +212,7 @@ useEffect(() => {
 				fill: true,
 				rawValues: Object.values(averages),
 			},
-		].filter(Boolean),
+		],
 	};
 
 	const options = {

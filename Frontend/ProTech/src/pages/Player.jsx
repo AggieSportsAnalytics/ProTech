@@ -5,6 +5,7 @@ import ForcePlate from "../components/ForcePlate";
 import AthleteComparisonChart from "../components/AthleteComparisonChart";
 import supabase from "../utils/supabase";
 import Loader from "../components/Loader";
+import { FiArrowLeft } from "react-icons/fi";
 
 function Data() {
 	const { id } = useParams();
@@ -38,6 +39,14 @@ function Data() {
 
 	return (
 		<div className="max-w-7xl mx-auto px-8 py-6">
+			{/* Back Button */}
+			<button
+				onClick={() => navigate('/data')}
+				className="flex items-center text-gray-600 hover:text-[#B4975A] transition-colors mb-6 text-sm bg-transparent"
+			>
+				<FiArrowLeft className="" />
+			</button>
+
 			{/* Header */}
 			<div className="mb-8">
 				<button
