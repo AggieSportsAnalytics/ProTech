@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import supabase from "../utils/supabase";
 import Loader from "../components/Loader";
 import AddDataModal from "../components/AddDataModal";
-import DropdownFilter from "../components/DropdownFilter";
-import { FiSearch, FiUser } from "react-icons/fi";
+import { FiTrash2, FiSearch, FiUser } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 
 function Data() {
@@ -14,15 +13,7 @@ function Data() {
 	const [loading, setLoading] = useState(false);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
-	const [selectedPosition, setSelectedPosition] = useState("All Positions");
 	const navigate = useNavigate();
-
-	// Function to capitalize position names
-	const capitalizePosition = (pos) => {
-		return pos.split(" ").map(word => 
-			word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-		).join(" ");
-	};
 
 	const handleDelete = async (id) => {
 		try {
@@ -79,26 +70,17 @@ function Data() {
 		getAllNames();
 	}, []);
 
-	// Handle search and position filter functionality
+	// Handle search functionality
 	useEffect(() => {
-		let filtered = data;
-
-		// Apply search filter
-		if (searchQuery.trim() !== "") {
-			filtered = filtered.filter((item) =>
+		if (searchQuery.trim() === "") {
+			setFilteredData(data);
+		} else {
+			const filtered = data.filter((item) =>
 				item.name.toLowerCase().includes(searchQuery.toLowerCase()),
 			);
+			setFilteredData(filtered);
 		}
-
-		// Apply position filter
-		if (selectedPosition !== "All Positions") {
-			filtered = filtered.filter((item) =>
-				item.position.toLowerCase() === selectedPosition.toLowerCase()
-			);
-		}
-
-		setFilteredData(filtered);
-	}, [searchQuery, selectedPosition, data]);
+	}, [searchQuery, data]);
 
 	if (error) {
 		return (
@@ -131,14 +113,29 @@ function Data() {
 		<>
 			<div className="bg-white shadow-sm border-b border-gray-200">
 				<div className="max-w-7xl mx-auto px-8 py-4">
-						<div className="flex items-center justify-between">
-							<h1 
-								onClick={() => window.location.href = '/'}
-								className="text-2xl font-bold text-[#0B1340] cursor-pointer hover:text-[#B4975A] transition-colors"
-							>
-								ProTech
-							</h1>
+					<div className="flex items-center justify-between">
+						<h1 
+							onClick={() => window.location.href = '/'}
+							className="text-2xl font-bold text-[#0B1340] cursor-pointer hover:text-[#B4975A] transition-colors"
+						>
+							ProTech
+						</h1>
 
+						<div className="flex items-center space-x-4">
+							{/* Search Bar */}
+							<div className="relative w-96">
+								<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+									<FiSearch className="h-5 w-5 text-gray-400" />
+								</div>
+								<input
+									type="text"
+									className="block w-full pl-10 pr-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-[#0B1340] focus:border-[#0B1340]"
+									placeholder="Search athletes..."
+									value={searchQuery}
+									onChange={(e) => setSearchQuery(e.target.value)}
+								/>
+							</div>
+							
 							{/* Add Button */}
 							<button
 								onClick={() => setIsModalOpen(true)}
@@ -149,37 +146,11 @@ function Data() {
 								Add
 							</button>
 						</div>
+					</div>
 				</div>
 			</div>
 
-			<div className="max-w-3xl mx-auto px-4 py-6">
-				{/* Search and Filter Section */}
-				<div className="mb-8">
-					<div className="bg-white rounded-lg shadow-sm p-4">
-						<div className="flex flex-col space-y-4">
-							{/* Search Bar */}
-							<div className="relative">
-								<div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-									<FiSearch className="h-5 w-5 text-gray-400" />
-								</div>
-								<input
-									type="text"
-									className="block w-full pl-11 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg focus:ring-[#0B1340] focus:border-[#0B1340] text-lg"
-									placeholder="Search athletes by name..."
-									value={searchQuery}
-									onChange={(e) => setSearchQuery(e.target.value)}
-								/>
-							</div>
-
-							{/* Position Filter */}
-							<DropdownFilter
-								selectedPosition={selectedPosition}
-								onPositionChange={setSelectedPosition}
-							/>
-						</div>
-					</div>
-				</div>
-
+			<div className="max-w-7xl mx-auto px-8 py-6">
 				{loading ? (
 					<div className="flex justify-center items-center h-64">
 						<Loader />
@@ -191,8 +162,8 @@ function Data() {
 							No athletes found
 						</h3>
 						<p className="mt-1 text-sm text-gray-500">
-							{searchQuery || selectedPosition !== "All Positions"
-								? "No results match your search criteria."
+							{searchQuery
+								? "No results match your search query."
 								: "Get started by adding a new athlete."}
 						</p>
 						<div className="mt-6">
@@ -207,27 +178,61 @@ function Data() {
 						</div>
 					</div>
 				) : (
-					<div className="space-y-4">
-						{filteredData.map((item) => (
-							<div
-								key={item.id}
-								className="group bg-white rounded-lg border-2 border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-200 hover:border-[#B4975A]"
-							>
+					<div className="mt-8">
+						<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+							{filteredData.map((item) => (
 								<div
-									onClick={() => navigate(`/data/${item.id}`)}
-									className="p-4 cursor-pointer"
+									key={item.id}
+									className="group relative bg-white rounded-lg border-2 border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-200 hover:border-[#B4975A]"
 								>
-									<div className="flex flex-col">
-										<h3 className="text-lg font-semibold text-[#0B1340] truncate">
-											{item.name}
-										</h3>
-										<p className="text-sm text-gray-500">
-											{capitalizePosition(item.position)}
-										</p>
+									<div
+										onClick={() => navigate(`/data/${item.id}`)}
+										className="p-4 cursor-pointer"
+									>
+										<div className="flex flex-col">
+											<h3 className="text-lg font-semibold text-[#0B1340] truncate">
+												{item.name}
+											</h3>
+											<p className="text-sm text-gray-500">
+												{item.position}
+											</p>
+											{/* <div
+												className="mt-2 text-sm text-[#B4975A]"
+												onClick={(e) => {
+													e.stopPropagation();
+													navigator.clipboard.writeText(item.id);
+													setCopied((prev) => ({ ...prev, [item.id]: true }));
+													setTimeout(() => {
+														setCopied((prev) => ({
+															...prev,
+															[item.id]: false,
+														}));
+													}, 1000);
+												}}
+											>
+												{!copied?.[item.id] ? (
+													<p>Click to Copy ID: {item.id}</p>
+												) : (
+													<p>Copied!</p>
+												)}
+											</div> */}
 										</div>
+									</div>
+									<div
+										// type="button"
+										className="absolute cursor-pointer top-2 right-2 rounded-full text-gray-400 hover:text-red-500 hover:bg-gray-100"
+										onClick={(e) => {
+											e.stopPropagation();
+											e.preventDefault();
+											setLoading(true);
+											handleDelete(item.id);
+										}}
+									>
+										<FiTrash2 size={14} />
 									</div>
 								</div>
 							))}
+						</div>
 					</div>
 				)}
 

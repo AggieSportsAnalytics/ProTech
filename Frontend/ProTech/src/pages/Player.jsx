@@ -1,15 +1,13 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import NordBoard from "../components/NordBoard";
 import ForcePlate from "../components/ForcePlate";
 import AthleteComparisonChart from "../components/AthleteComparisonChart";
 import supabase from "../utils/supabase";
 import Loader from "../components/Loader";
-import { FiArrowLeft } from "react-icons/fi";
 
 function Data() {
 	const { id } = useParams();
-	const navigate = useNavigate();
 	const [athlete, setAthlete] = useState(null);
 	const [loading, setLoading] = useState(true);
 
@@ -39,14 +37,6 @@ function Data() {
 
 	return (
 		<div className="max-w-7xl mx-auto px-8 py-6">
-			{/* Back Button */}
-			<button
-				onClick={() => navigate('/data')}
-				className="flex items-center text-gray-600 hover:text-[#B4975A] transition-colors mb-6 text-sm bg-transparent"
-			>
-				<FiArrowLeft className="" />
-			</button>
-
 			{/* Header */}
 			<div className="mb-8">
 				<button

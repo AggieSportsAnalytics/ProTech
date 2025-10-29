@@ -9,17 +9,17 @@ import { FaSave } from "react-icons/fa";
 
 Modal.setAppElement("#root");
 
-function RecruitmentModal({ isModalOpen, setIsModalOpen, selectedType, setSelectedType, formData, setFormData }) {
+function RecruitmentModal({ isModalOpen, setIsModalOpen }) {
+	const [selectedType, setSelectedType] = useState(null);
 	const [loading, setLoading] = useState(false);
 	const [imagePreview, setImagePreview] = useState(null);
+	const [formData, setFormData] = useState({});
 	const [athleteImage, setAthleteImage] = useState(null);
 
 	const handleClose = () => {
 		setIsModalOpen(false);
 		setSelectedType(null);
 		setFormData({});
-		setImagePreview(null);
-		setAthleteImage(null);
 	};
 
 	const handleChange = (e) => {
