@@ -1,15 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import supabase from "../utils/supabase";
 
-function AthleteCard({ athlete }) {
-	const navigate = useNavigate();
+function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) {
 	const availableYears = useMemo(
 		() => athlete.stats.map((stat) => stat.year),
 		[athlete],
 	);
 	const [imageUrls, setImageUrls] = useState([]);
-	const [copied, setCopied] = useState(false);
 	const [imageLoading, setImageLoading] = useState(true);
 
 	useEffect(() => {
@@ -73,17 +71,14 @@ function AthleteCard({ athlete }) {
 						<p><span className="font-medium">Hand:</span> {athlete.hand}</p>
 					</div>
 				</div>
-				<div
-					className="text-sm text-gray-500 cursor-pointer hover:text-[#B4975A]"
-					onClick={(e) => {
-						e.stopPropagation();
-						navigator.clipboard.writeText(athlete.id);
-						setCopied(true);
-						setTimeout(() => setCopied(false), 1000);
-					}}
+				<Link
+					to={`/data/${athlete.id}`}
+					className="bg-[#B4975A] hover:bg-[#8B7443] text-white px-4 py-2 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#B4975A] flex items-center"
 				>
-					{!copied ? <p>ID: {athlete.id}</p> : <p>Copied!</p>}
-				</div>
+					<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+					</svg>
+				</Link>
 			</div>
 
 			{/* Images Section */}

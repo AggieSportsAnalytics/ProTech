@@ -39,9 +39,6 @@ const relativeNormalize = (value, avg, maxRatio = 2) => {
 const AthleteComparisonChart = ({ id }) => {
 	const [loading, setLoading] = useState(false);
 	const [mainAthlete, setMainAthlete] = useState({});
-	const [comparisonAthletes, setComparisonAthletes] = useState([]);
-	const [selectedComparisonId, setSelectedComparisonId] = useState(null);
-	const [comparisonAthlete, setComparisonAthlete] = useState(null);
 	const [averages, setAverages] = useState({});
 
 	function getLatestStats(stats) {
@@ -132,17 +129,6 @@ const AthleteComparisonChart = ({ id }) => {
 			const position = await fetchAndSetAthlete(id, setMainAthlete);
 			await calcAverages(position);
 
-			const { data, error } = await supabase
-				.from("Athlete_Data")
-				.select("name, id")
-				.eq("position", position)
-				.neq("id", id); // exclude current athlete
-
-			if (!error && data) {
-				setComparisonAthletes(data);
-				// Do not preselect a comparison athlete; let the user choose
-				setSelectedComparisonId(null);
-			}
 			setLoading(false);
 		};
 		init();
@@ -184,7 +170,6 @@ const AthleteComparisonChart = ({ id }) => {
 	if (loading || !mainAthlete.name) return <Loader />;
 
 	const athleteData = getNormalizedData(mainAthlete);
-	const comparisonData = comparisonAthlete ? getNormalizedData(comparisonAthlete) : null;
 	
 	const data = {
 		labels,
@@ -198,15 +183,6 @@ const AthleteComparisonChart = ({ id }) => {
 				fill: true,
 				rawValues: athleteData.rawValues,
 			},
-			comparisonData && {
-				label: comparisonAthlete.name,
-				data: comparisonData.normalizedValues,
-				backgroundColor: "rgba(180, 151, 90, 0.2)",
-				borderColor: "rgb(180, 151, 90)",
-				pointBackgroundColor: "rgb(180, 151, 90)",
-				fill: true,
-				rawValues: comparisonData.rawValues,
-			},
 			{
 				label: "Position Average",
 				data: [5, 5, 5, 5, 5, 5], // Center point on the 0-10 scale
@@ -216,7 +192,7 @@ const AthleteComparisonChart = ({ id }) => {
 				fill: true,
 				rawValues: Object.values(averages),
 			},
-		].filter(Boolean),
+		],
 	};
 
 	const options = {
