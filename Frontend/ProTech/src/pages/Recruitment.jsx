@@ -4,6 +4,10 @@ import Loader from "../components/Loader";
 import supabase from "../utils/supabase";
 import RecruitmentModal from "../components/RecruitmentModal";
 import AthleteCard from "../components/AthleteCard";
+import AddDataModal from "../components/AddDataModal";
+import NordBoard from "../components/NordBoard";
+import ForcePlate from "../components/ForcePlate";
+import AthleteComparisonChart from "../components/AthleteComparisonChart";
 
 function Recruitment() {
 	const [selectedPosition, setSelectedPosition] = useState("");
@@ -142,6 +146,31 @@ function Recruitment() {
 							/>
 						</div>
 
+						{/* Data Visualizations */}
+						{filteredAthletes[currentIndex]?.id && (
+							<div className="mt-12 space-y-8">
+								{/* Performance Overview */}
+								<div className="mb-8">
+									<h2 className="text-xl font-semibold text-[#0B1340] mb-4">Performance Overview</h2>
+									<div className="bg-white rounded-lg shadow-sm p-6">
+										<AthleteComparisonChart id={filteredAthletes[currentIndex].id} />
+									</div>
+								</div>
+
+								{/* NordBoard Data */}
+								<div className="bg-white rounded-lg shadow-sm p-6">
+									<h2 className="text-xl font-semibold text-[#0B1340] mb-4">NordBoard Data</h2>
+									<NordBoard id={filteredAthletes[currentIndex].id} />
+								</div>
+
+								{/* Force Plate Data */}
+								<div className="bg-white rounded-lg shadow-sm p-6">
+									<h2 className="text-xl font-semibold text-[#0B1340] mb-4">Force Plate Data</h2>
+									<ForcePlate id={filteredAthletes[currentIndex].id} />
+								</div>
+							</div>
+						)}
+
 						{/* Page Indicator */}
 						<div className="text-center mt-2 text-sm text-gray-400">
 							{currentIndex + 1} / {filteredAthletes.length}
@@ -160,6 +189,20 @@ function Recruitment() {
 				formData={formData}
 				setFormData={setFormData}
 			/>
+
+			<div className="fixed bottom-0 left-0 right-0 bg-white shadow-sm z-50">
+				
+				<div>
+					<AddDataModal
+						isModalOpen={isModalOpen}
+						setIsModalOpen={setIsModalOpen}
+						selectedType={selectedType}
+						setSelectedType={setSelectedType}
+						formData={formData}
+						setFormData={setFormData}
+					/>
+				</div>
+			</div>
 		</div>
 	);
 }
