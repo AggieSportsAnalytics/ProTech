@@ -19,6 +19,8 @@ function Recruitment() {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [selectedType, setSelectedType] = useState(null);
 	const [formData, setFormData] = useState({});
+	const [hasNordData, setHasNordData] = useState(false);
+	const [hasForcePlateData, setHasForcePlateData] = useState(false);
 
 	useEffect(() => {
 		const getAllPlayers = async () => {
@@ -41,6 +43,24 @@ function Recruitment() {
 		getAllPlayers();
 	}, []);
 
+	// Filter athletes by position and search query (calculate before early returns)
+	const filteredAthletes = athletes.filter((athlete) => {
+		const matchesPosition = !selectedPosition || athlete.position === selectedPosition;
+		const matchesSearch = !searchQuery || 
+			athlete.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+			athlete.position.toLowerCase().includes(searchQuery.toLowerCase());
+		return matchesPosition && matchesSearch;
+	});
+
+	// Get current athlete ID
+	const currentAthleteId = filteredAthletes[currentIndex]?.id;
+
+	// Reset data flags when athlete changes (MUST be before early returns)
+	useEffect(() => {
+		setHasNordData(false);
+		setHasForcePlateData(false);
+	}, [currentAthleteId]);
+
 	if (error) {
 		return <div className="p-8 text-red-600">Error: {error}</div>;
 	}
@@ -52,14 +72,6 @@ function Recruitment() {
 	if (athletes.length === 0 && !loading) {
 		return <div className="p-8">No players found.</div>;
 	}
-	// Filter athletes by position and search query
-	const filteredAthletes = athletes.filter((athlete) => {
-		const matchesPosition = !selectedPosition || athlete.position === selectedPosition;
-		const matchesSearch = !searchQuery || 
-			athlete.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			athlete.position.toLowerCase().includes(searchQuery.toLowerCase());
-		return matchesPosition && matchesSearch;
-		});
 	
 
 	return (
@@ -157,17 +169,27 @@ function Recruitment() {
 									</div>
 								</div>
 
-								{/* NordBoard Data */}
-								<div className="bg-white rounded-lg shadow-sm p-6">
-									<h2 className="text-xl font-semibold text-[#0B1340] mb-4">NordBoard Data</h2>
-									<NordBoard id={filteredAthletes[currentIndex].id} />
+								{/* Hidden check for data */}
+								<div style={{ display: 'none' }}>
+									<NordBoard id={filteredAthletes[currentIndex].id} onHasData={setHasNordData} />
+									<ForcePlate id={filteredAthletes[currentIndex].id} onHasData={setHasForcePlateData} />
 								</div>
 
+								{/* NordBoard Data */}
+								{hasNordData && (
+									<div className="bg-white rounded-lg shadow-sm p-6">
+										
+										<NordBoard id={filteredAthletes[currentIndex].id} />
+									</div>
+								)}
+
 								{/* Force Plate Data */}
-								<div className="bg-white rounded-lg shadow-sm p-6">
-									<h2 className="text-xl font-semibold text-[#0B1340] mb-4">Force Plate Data</h2>
-									<ForcePlate id={filteredAthletes[currentIndex].id} />
-								</div>
+								{hasForcePlateData && (
+									<div className="bg-white rounded-lg shadow-sm p-6">
+										
+										<ForcePlate id={filteredAthletes[currentIndex].id} />
+									</div>
+								)}
 							</div>
 						)}
 

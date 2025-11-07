@@ -12,7 +12,7 @@ import {
 import supabase from "../utils/supabase";
 import Loader from "./Loader";
 
-function ForcePlate({ id }) {
+function ForcePlate({ id, onHasData }) {
 	const [forcePlateData, setForcePlateData] = useState([]);
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
@@ -34,6 +34,7 @@ function ForcePlate({ id }) {
 			if (baselineError || weeklyError) {
 				console.error("Supabase error:", baselineError || weeklyError);
 				setError((baselineError || weeklyError)?.message || "Unknown error");
+				if (onHasData) onHasData(false);
 			} else if (baselineData && weeklyData) {
 				const combined = [...(baselineData || []), ...(weeklyData || [])];
 				const sortedData = combined.sort(
@@ -62,15 +63,21 @@ function ForcePlate({ id }) {
 
 				setKeyCounts(keyCounts);
 				setForcePlateData(sortedData);
+				
+				// Check if any chart data exists (skip name and date)
+				const chartKeys = Object.keys(keyCounts).filter(key => key !== 'name' && key !== 'date');
+				const hasData = chartKeys.some(key => keyCounts[key] > 0);
+				if (onHasData) onHasData(hasData);
 			} else {
 				console.error("Error getting force plate data:", error);
 				setForcePlateData([]);
+				if (onHasData) onHasData(false);
 			}
 			setLoading(false);
 		}
 
 		getForcePlateData();
-	}, [id]);
+	}, [id, onHasData]);
 
 	if (error) {
 		return <div className="p-8 text-red-600">Error: {error}</div>;
