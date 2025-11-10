@@ -12,7 +12,7 @@ import {
 import supabase from "../utils/supabase";
 import Loader from "./Loader";
 
-function NordBoard({ id }) {
+function NordBoard({ id, onDataPresence }) {
 	const [nordData, setNordData] = useState([]);
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
@@ -25,7 +25,7 @@ function NordBoard({ id }) {
 				.select("*")
 				.eq("id", id);
 
-			if (error) {
+            if (error) {
 				console.error("Supabase error:", error);
 				setError(error.message);
 			} else if (data) {
@@ -33,9 +33,11 @@ function NordBoard({ id }) {
 					(a, b) => new Date(a.date) - new Date(b.date),
 				);
 				setNordData(sortedData);
+                if (onDataPresence) onDataPresence(sortedData.length > 0);
 			} else {
 				console.error("Error getting nordboard data:", error);
 				setNordData([]);
+                if (onDataPresence) onDataPresence(false);
 			}
 			setLoading(false);
 		}
@@ -56,7 +58,7 @@ function NordBoard({ id }) {
 			<h1 className="text-2xl font-bold mb-6">
 				{nordData?.length > 0 && <p>NordBoard Data for {nordData[0].name}</p>}
 			</h1>
-			{nordData.length > 0 && (
+			{nordData.length > 0 ? (
 				<div className="relative mb-8">
 					<ResponsiveContainer width="100%" height={300}>
 						<LineChart data={nordData}>
@@ -79,6 +81,10 @@ function NordBoard({ id }) {
 							/>
 						</LineChart>
 					</ResponsiveContainer>
+				</div>
+			) : (
+				<div className="flex items-center justify-center py-12">
+					<p className="text-gray-500 text-lg">No data available</p>
 				</div>
 			)}
 		</>
