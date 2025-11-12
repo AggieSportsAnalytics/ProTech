@@ -73,7 +73,7 @@ function Recruitment() {
 							</h1>
 						</div>
 						<div className="flex items-center space-x-4">
-							<div className="flex items-center space-x-4">
+							<div className="flex items-center space-x-4 mt-2 space-y-4">
 								<input
 									type="text"
 									placeholder="Search athletes..."
@@ -95,6 +95,8 @@ function Recruitment() {
 									onClick={() => setIsModalOpen(true)}
 									type="button"
 									className="bg-[#B4975A] hover:bg-[#8B7443] text-white rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#B4975A] flex items-center"
+									style={{ transform: "translateY(-10px)" }}   // ← move up 4px
+
 								>
 									<span className="text-sm">+</span>
 								</button>
