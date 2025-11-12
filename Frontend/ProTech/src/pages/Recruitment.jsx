@@ -48,14 +48,34 @@ function Recruitment() {
 	if (athletes.length === 0 && !loading) {
 		return <div className="p-8">No players found.</div>;
 	}
+
+	// Function to get last name from full name
+	const getLastName = (fullName) => {
+		if (!fullName) return "";
+		const parts = fullName.trim().split(/\s+/);
+		return parts.length > 1 ? parts[parts.length - 1] : parts[0];
+	};
+
+	// Function to sort by last name alphabetically
+	const sortByLastName = (arr) => {
+		return [...arr].sort((a, b) => {
+			const lastNameA = getLastName(a.name || "").toLowerCase();
+			const lastNameB = getLastName(b.name || "").toLowerCase();
+			return lastNameA.localeCompare(lastNameB);
+		});
+	};
+
 	// Filter athletes by position and search query
-	const filteredAthletes = athletes.filter((athlete) => {
+	let filteredAthletes = athletes.filter((athlete) => {
 		const matchesPosition = !selectedPosition || athlete.position === selectedPosition;
 		const matchesSearch = !searchQuery || 
 			athlete.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
 			athlete.position.toLowerCase().includes(searchQuery.toLowerCase());
 		return matchesPosition && matchesSearch;
-		});
+	});
+
+	// Sort by last name alphabetically
+	filteredAthletes = sortByLastName(filteredAthletes);
 	
 
 	return (
@@ -64,7 +84,12 @@ function Recruitment() {
 			<header className="fixed top-0 left-0 right-0 bg-white shadow-sm z-50">
 				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
 					<div className="flex justify-between items-center">
-						<div className="flex items-center">
+						<div className="flex items-center gap-3">
+							<img 
+								src="/logo.png" 
+								alt="Logo" 
+								className="h-10 w-10 object-contain"
+							/>
 							<h1 
 								onClick={() => window.location.href = '/'}
 								className="text-2xl font-bold text-[#0B1340] cursor-pointer hover:text-[#B4975A] transition-colors"
