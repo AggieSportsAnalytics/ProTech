@@ -43,14 +43,33 @@ function Recruitment() {
 		getAllPlayers();
 	}, []);
 
+	// Function to get last name from full name
+	const getLastName = (fullName) => {
+		if (!fullName) return "";
+		const parts = fullName.trim().split(/\s+/);
+		return parts.length > 1 ? parts[parts.length - 1] : parts[0];
+	};
+
+	// Function to sort by last name alphabetically
+	const sortByLastName = (arr) => {
+		return [...arr].sort((a, b) => {
+			const lastNameA = getLastName(a.name || "").toLowerCase();
+			const lastNameB = getLastName(b.name || "").toLowerCase();
+			return lastNameA.localeCompare(lastNameB);
+		});
+	};
+
 	// Filter athletes by position and search query (calculate before early returns)
-	const filteredAthletes = athletes.filter((athlete) => {
+	let filteredAthletes = athletes.filter((athlete) => {
 		const matchesPosition = !selectedPosition || athlete.position === selectedPosition;
 		const matchesSearch = !searchQuery || 
 			athlete.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
 			athlete.position.toLowerCase().includes(searchQuery.toLowerCase());
 		return matchesPosition && matchesSearch;
 	});
+
+	// Sort by last name alphabetically
+	filteredAthletes = sortByLastName(filteredAthletes);
 
 	// Get current athlete ID
 	const currentAthleteId = filteredAthletes[currentIndex]?.id;
@@ -72,34 +91,6 @@ function Recruitment() {
 	if (athletes.length === 0 && !loading) {
 		return <div className="p-8">No players found.</div>;
 	}
-
-	// Function to get last name from full name
-	const getLastName = (fullName) => {
-		if (!fullName) return "";
-		const parts = fullName.trim().split(/\s+/);
-		return parts.length > 1 ? parts[parts.length - 1] : parts[0];
-	};
-
-	// Function to sort by last name alphabetically
-	const sortByLastName = (arr) => {
-		return [...arr].sort((a, b) => {
-			const lastNameA = getLastName(a.name || "").toLowerCase();
-			const lastNameB = getLastName(b.name || "").toLowerCase();
-			return lastNameA.localeCompare(lastNameB);
-		});
-	};
-
-	// Filter athletes by position and search query
-	let filteredAthletes = athletes.filter((athlete) => {
-		const matchesPosition = !selectedPosition || athlete.position === selectedPosition;
-		const matchesSearch = !searchQuery || 
-			athlete.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			athlete.position.toLowerCase().includes(searchQuery.toLowerCase());
-		return matchesPosition && matchesSearch;
-	});
-
-	// Sort by last name alphabetically
-	filteredAthletes = sortByLastName(filteredAthletes);
 	
 
 	return (
