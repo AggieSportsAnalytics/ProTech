@@ -24,6 +24,22 @@ function Data() {
 		).join(" ");
 	};
 
+	// Function to get last name from full name
+	const getLastName = (fullName) => {
+		if (!fullName) return "";
+		const parts = fullName.trim().split(/\s+/);
+		return parts.length > 1 ? parts[parts.length - 1] : parts[0];
+	};
+
+	// Function to sort by last name alphabetically
+	const sortByLastName = (arr) => {
+		return [...arr].sort((a, b) => {
+			const lastNameA = getLastName(a.name || "").toLowerCase();
+			const lastNameB = getLastName(b.name || "").toLowerCase();
+			return lastNameA.localeCompare(lastNameB);
+		});
+	};
+
 	const handleDelete = async (id) => {
 		try {
 			const confirmed = window.confirm(
@@ -65,8 +81,10 @@ function Data() {
 				console.error("Supabase error:", error);
 				setError(error.message);
 			} else if (data) {
-				setData(data);
-				setFilteredData(data);
+				// Sort by last name when initially loading
+				const sortedData = sortByLastName(data);
+				setData(sortedData);
+				setFilteredData(sortedData);
 			} else {
 				console.error("Error fetching names:", error);
 				setData([]);
@@ -96,6 +114,9 @@ function Data() {
 				item.position.toLowerCase() === selectedPosition.toLowerCase()
 			);
 		}
+
+		// Sort by last name alphabetically
+		filtered = sortByLastName(filtered);
 
 		setFilteredData(filtered);
 	}, [searchQuery, selectedPosition, data]);
@@ -132,12 +153,19 @@ function Data() {
 			<div className="bg-white shadow-sm border-b border-gray-200">
 				<div className="max-w-7xl mx-auto px-8 py-4">
 						<div className="flex items-center justify-between">
-							<h1 
-								onClick={() => window.location.href = '/'}
-								className="text-2xl font-bold text-[#0B1340] cursor-pointer hover:text-[#B4975A] transition-colors"
-							>
-								ProTech
-							</h1>
+							<div className="flex items-center gap-3">
+								<img 
+									src="/logo.png" 
+									alt="Logo" 
+									className="h-10 w-10 object-contain"
+								/>
+								<h1 
+									onClick={() => window.location.href = '/'}
+									className="text-2xl font-bold text-[#0B1340] cursor-pointer hover:text-[#B4975A] transition-colors"
+								>
+									ProTech
+								</h1>
+							</div>
 
 							{/* Add Button */}
 							<button

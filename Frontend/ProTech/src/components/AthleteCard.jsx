@@ -81,82 +81,93 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 				</Link>
 			</div>
 
+			{/* Container for Images + Stats section */}
+			<div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+
 			{/* Images Section */}
-			<div className="mb-8 overflow-x-auto">
-				<h3 className="text-xl font-semibold text-[#0B1340] mb-4">Progress Photos</h3>
-				{imageLoading ? (
-					<div className="flex items-center justify-center h-[50vh]">
+			<div className="overflow-x-auto">
+				<h3 className="text-xl font-semibold text-[#0B1340] mb-4 text-center">Progress Photos</h3>
+					{imageLoading ? (
+						<div className="flex items-center justify-center h-[50vh]">
 						<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0B1340]"></div>
 					</div>
 				) : imageUrls.length > 0 ? (
-					<div className="flex space-x-6 pb-4 justify-center">
-						{imageUrls.map((image, index) => (
-							<div key={index} className="relative flex-shrink-0 rounded-lg shadow-md">
-								<img
-									src={image}
-									alt={`${athlete.name} - ${availableYears[index]}`}
-									className="h-[50vh] w-auto"
-									loading="lazy"
-									onError={(e) => {
-										e.target.onerror = null;
-										e.target.src = '/aggie.png'; // fallback image
-									}}
-								/>
-								<div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white py-2 px-3">
-									<p className="text-sm font-medium">{availableYears[index]}</p>
-								</div>
-							</div>
-						))}
+				<div className="flex space-x-6 pb-4 justify-center">
+					{imageUrls.map((image, index) => (
+					<div key={index} className="relative flex-shrink-0 rounded-lg shadow-md">
+						<img
+						src={image}
+						alt={`${athlete.name} - ${availableYears[index]}`}
+						className="h-[60vh] w-auto"
+						loading="lazy"
+						onError={(e) => {
+							e.target.onerror = null;
+							e.target.src = '/aggie.png';
+						}}
+						/>
+						<div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white py-2 px-3">
+						<p className="text-sm font-medium">{availableYears[index]}</p>
+						</div>
 					</div>
+					))}
+				</div>
 				) : (
-					<div className="flex items-center justify-center h-[50vh] text-gray-500">
-						No photos available
-					</div>
+				<div className="flex items-center justify-center h-[50vh] text-gray-500">
+					No photos available
+				</div>
 				)}
 			</div>
 
-			{/* Stats Section */}
+			{/* Right: Stats Section */}
 			<div>
-				<h3 className="text-xl font-semibold text-[#0B1340] mb-4">Performance Stats</h3>
-				<div className="overflow-x-auto">
-					<table className="min-w-full divide-y divide-gray-200">
-						<thead className="bg-gray-50">
-							<tr>
-								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
-								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Body Weight</th>
-								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vertical Jump</th>
-								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Broad Jump</th>
-								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">10-Yard Dash</th>
-								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Flying 10</th>
-								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">40-Yard Dash</th>
-								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pro Agility</th>
-								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">L-Drill</th>
-								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hang Clean</th>
-								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Back Squat</th>
-								<th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Incline Bench</th>
-							</tr>
-						</thead>
-						<tbody className="bg-white divide-y divide-gray-200">
-							{athlete.stats.map((stat) => (
-								<tr key={stat.year} className="hover:bg-gray-50">
-									<td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{stat.year}</td>
-									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.bodyWeight}</td>
-									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.verticalJump}</td>
-									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.broadJump}</td>
-									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.tenYard}</td>
-									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.flyingTen}</td>
-									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.fortyYard}</td>
-									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.proAgility}</td>
-									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.lDrill}</td>
-									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.hangClean}</td>
-									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.backSquat}</td>
-									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.inclineBench}</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
+			<h3 className="text-xl font-semibold text-[#0B1340] mb-4 text-center">
+				Performance Stats
+			</h3>
+			<div className="overflow-y-auto max-h-96">
+				<table className="min-w-full divide-y divide-gray-200">
+				<thead className="bg-gray-50">
+					<tr>
+					<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+						Stat
+					</th>
+					{athlete.stats.map((stat) => (
+						<th
+						key={stat.year}
+						className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+						>
+						{stat.year}
+						</th>
+					))}
+					</tr>
+				</thead>
+				<tbody className="bg-white divide-y divide-gray-200">
+					{[
+					["Body Weight", "bodyWeight"],
+					["Vertical Jump", "verticalJump"],
+					["Broad Jump", "broadJump"],
+					["10-Yard Dash", "tenYard"],
+					["Flying 10", "flyingTen"],
+					["40-Yard Dash", "fortyYard"],
+					["Pro Agility", "proAgility"],
+					["L-Drill", "lDrill"],
+					["Hang Clean", "hangClean"],
+					["Back Squat", "backSquat"],
+					["Incline Bench", "inclineBench"],
+					].map(([label, key]) => (
+					<tr key={key} className="hover:bg-gray-50">
+						<td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{label}</td>
+						{athlete.stats.map((stat) => (
+						<td key={stat.year + key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+							{stat[key]}
+						</td>
+						))}
+					</tr>
+					))}
+				</tbody>
+				</table>
 			</div>
+			</div>
+		</div>
 		</div>
 	);
 }
