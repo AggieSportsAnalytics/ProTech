@@ -12,7 +12,7 @@ import {
 import supabase from "../utils/supabase";
 import Loader from "./Loader";
 
-function ForcePlate({ id, onDataPresence }) {
+function ForcePlate({ id, onHasData }) {
 	const [forcePlateData, setForcePlateData] = useState([]);
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
@@ -34,6 +34,7 @@ function ForcePlate({ id, onDataPresence }) {
 			if (baselineError || weeklyError) {
 				console.error("Supabase error:", baselineError || weeklyError);
 				setError((baselineError || weeklyError)?.message || "Unknown error");
+				if (onHasData) onHasData(false);
             } else if (baselineData && weeklyData) {
 				const combined = [...(baselineData || []), ...(weeklyData || [])];
 				const sortedData = combined.sort(
@@ -62,7 +63,7 @@ function ForcePlate({ id, onDataPresence }) {
 
 				setKeyCounts(keyCounts);
 				setForcePlateData(sortedData);
-                if (onDataPresence) {
+                if (onHasData) {
                     const metricKeys = [
                         "rsi_modified_meters_sec",
                         "jump_height_cm",
@@ -74,18 +75,18 @@ function ForcePlate({ id, onDataPresence }) {
                         "landing_impulse_asym_percent_R",
                     ];
                     const hasAny = metricKeys.some((k) => (keyCounts[k] || 0) > 0);
-                    onDataPresence(hasAny);
+                    onHasData(hasAny);
                 }
 			} else {
 				console.error("Error getting force plate data:", error);
 				setForcePlateData([]);
-                if (onDataPresence) onDataPresence(false);
+                if (onHasData) onHasData(false);
 			}
 			setLoading(false);
 		}
 
 		getForcePlateData();
-	}, [id]);
+	}, [id, onHasData]);
 
 	if (error) {
 		return <div className="p-8 text-red-600">Error: {error}</div>;

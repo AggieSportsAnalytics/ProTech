@@ -25,8 +25,12 @@ const normalize = (value, min, max) =>
 	Math.min(10, Math.max(0, ((value - min) / (max - min)) * 10));
 
 const parseNumber = (str, unit = "") => {
-	if (!str) return 0;
-	return Number.parseFloat(str.replace(unit, "").replace(/["']/g, "").trim());
+	if (!str && str !== 0) return 0;
+	// Convert to string if it's not already
+	const strValue = typeof str === 'string' ? str : String(str);
+	// Handle "NT" (No Time) or other non-numeric values
+	if (strValue === "NT" || strValue === "N/A" || strValue === "") return 0;
+	return Number.parseFloat(strValue.replace(unit, "").replace(/["']/g, "").trim()) || 0;
 };
 
 const safeDivide = (value, avg) => (avg > 0 ? value / avg : 1);
@@ -116,20 +120,40 @@ const AthleteComparisonChart = ({ id }) => {
 		const result = {};
 		for (const key of statKeys) {
 			const values = latestStats
-				.map((s) => parseNumber(s?.[key]))
-				.filter((v) => !Number.isNaN(v));
-			result[key] = values.reduce((sum, v) => sum + v, 0) / values.length;
+				.map((s) => {
+					const value = s?.[key];
+					// Handle different value types
+					if (value === null || value === undefined) return null;
+					return parseNumber(value);
+				})
+				.filter((v) => v !== null && !Number.isNaN(v) && v > 0);
+			
+			if (values.length > 0) {
+				result[key] = values.reduce((sum, v) => sum + v, 0) / values.length;
+			} else {
+				result[key] = 0;
+			}
 		}
 		setAverages(result);
 	};
 
 	useEffect(() => {
 		const init = async () => {
+			if (!id) {
+				setLoading(false);
+				return;
+			}
 			setLoading(true);
-			const position = await fetchAndSetAthlete(id, setMainAthlete);
-			await calcAverages(position);
-
-			setLoading(false);
+			try {
+				const position = await fetchAndSetAthlete(id, setMainAthlete);
+				if (position) {
+					await calcAverages(position);
+				}
+			} catch (error) {
+				console.error("Error initializing chart:", error);
+			} finally {
+				setLoading(false);
+			}
 		};
 		init();
 	}, [id]);
@@ -167,7 +191,21 @@ const AthleteComparisonChart = ({ id }) => {
 		return { normalizedValues, rawValues };
 	};
 
-	if (loading || !mainAthlete.name) return <Loader />;
+	if (!mainAthlete || !mainAthlete.name) {
+		if (loading) {
+			return (
+				<div className="p-4 flex items-center justify-center min-h-[400px]">
+					<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0B1340]"></div>
+					<span className="ml-3 text-gray-500">Loading chart data...</span>
+				</div>
+			);
+		}
+		return (
+			<div className="p-4 text-center text-gray-500">
+				No athlete data available
+			</div>
+		);
+	}
 
 	const athleteData = getNormalizedData(mainAthlete);
 	
@@ -221,7 +259,14 @@ const AthleteComparisonChart = ({ id }) => {
 
 	return (
 		<div className="p-4 max-w-xl mx-auto">
-			<Radar data={data} options={options} />
+			{loading ? (
+				<div className="flex items-center justify-center min-h-[400px]">
+					<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0B1340]"></div>
+					<span className="ml-3 text-gray-500">Updating chart...</span>
+				</div>
+			) : (
+				<Radar data={data} options={options} />
+			)}
 		</div>
 	);
 };

@@ -30,12 +30,6 @@ function Dashboard() {
               >
                 Athlete Profiles
               </a>
-              <a 
-                href="/data" 
-                className="inline-flex w-64 items-center justify-center rounded-lg border-2 border-[#B4975A] bg-transparent px-6 py-3 text-lg font-medium text-[#B4975A] transition-colors hover:bg-[#B4975A] hover:text-white"
-              >
-                Data Visualization
-              </a>
             </div>
           </div>
         </div>
