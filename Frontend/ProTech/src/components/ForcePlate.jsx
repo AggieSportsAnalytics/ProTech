@@ -356,22 +356,6 @@ function ForcePlate({ id, onHasData }) {
 							No Jump Height data available
 						</div>
 					)}
-
-					<div className="flex justify-end gap-4">
-						<button
-							type="button"
-							onClick={() =>
-								onAddData &&
-								onAddData({
-									type: "forceplate",
-									athleteId: id,
-								})
-							}
-							className="bg-[#FFBF00] hover:bg-[#FFD700] text-[#022851] font-semibold px-4 py-2 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FFBF00]"
-						>
-							Add Force Plate Entry
-						</button>
-					</div>
 				</>
 			) : (
 				<div className="flex items-center justify-center py-12">
