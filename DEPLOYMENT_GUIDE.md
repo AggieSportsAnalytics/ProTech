@@ -99,7 +99,95 @@ This guide will walk you through deploying your ProTech React application to Ver
 
 ---
 
-## Step 7: Configure Custom Domain (Optional)
+## Step 7: Adding Environment Variables After Deployment
+
+If you need to add or update environment variables after your site is already deployed:
+
+### Method 1: Through Vercel Dashboard (Recommended)
+
+1. **Go to your Vercel Dashboard:**
+   - Visit [vercel.com/dashboard](https://vercel.com/dashboard)
+   - Click on your **ProTech** project
+
+2. **Navigate to Settings:**
+   - Click on **"Settings"** in the top navigation
+   - Scroll down and click on **"Environment Variables"** in the left sidebar
+
+3. **Add or Edit Variables:**
+   - To **add a new variable:**
+     - Click **"Add New"** or the **"+"** button
+     - Enter the **Name** (e.g., `VITE_SUPABASE_URL`)
+     - Enter the **Value** (your actual value)
+     - Select which **Environments** to apply to:
+       - ☑️ Production (live site)
+       - ☑️ Preview (branch deployments)
+       - ☑️ Development (local development)
+     - Click **"Save"**
+   
+   - To **edit an existing variable:**
+     - Find the variable in the list
+     - Click the **three dots (⋯)** next to it
+     - Select **"Edit"**
+     - Update the value
+     - Click **"Save"**
+
+4. **Redeploy Your Application:**
+   - After adding/updating environment variables, you **must redeploy** for changes to take effect
+   - Go to the **"Deployments"** tab
+   - Find your latest deployment
+   - Click the **three dots (⋯)** → **"Redeploy"**
+   - Or push a new commit to trigger automatic redeployment
+
+### Method 2: Using Vercel CLI
+
+1. **Install Vercel CLI** (if not already installed):
+   ```bash
+   npm i -g vercel
+   ```
+
+2. **Login to Vercel:**
+   ```bash
+   vercel login
+   ```
+
+3. **Link your project** (if not already linked):
+   ```bash
+   cd Frontend/ProTech
+   vercel link
+   ```
+
+4. **Add environment variable:**
+   ```bash
+   vercel env add VITE_SUPABASE_URL
+   # Follow prompts to enter value and select environments
+   ```
+
+5. **Pull environment variables** (optional, for local development):
+   ```bash
+   vercel env pull .env.local
+   ```
+
+### Important Notes:
+
+- ⚠️ **Changes require redeployment:** Environment variable changes only take effect after redeploying
+- 🔄 **Automatic redeploy:** Pushing a new commit will automatically redeploy with new variables
+- 🔒 **Security:** Never commit environment variables to Git - always use Vercel's environment variables
+- 📝 **Variable names:** For Vite apps, variables must start with `VITE_` to be accessible in the browser
+- 🌍 **Environment scope:** You can set different values for Production, Preview, and Development
+
+### Verifying Environment Variables Are Working:
+
+1. After redeploying, check your site
+2. Open browser DevTools (F12) → Console
+3. If variables are accessible, you should see your app working correctly
+4. If you see errors about missing environment variables, double-check:
+   - Variable names are correct (must start with `VITE_`)
+   - Variables are saved in Vercel
+   - You've redeployed after adding variables
+
+---
+
+## Step 8: Configure Custom Domain (Optional)
 
 1. In your Vercel project dashboard, go to **Settings** → **Domains**
 2. Enter your custom domain (e.g., `protech.com`)
