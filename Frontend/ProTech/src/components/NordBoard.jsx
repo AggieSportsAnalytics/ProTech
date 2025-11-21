@@ -12,7 +12,7 @@ import {
 import supabase from "../utils/supabase";
 import Loader from "./Loader";
 
-function NordBoard({ id, onDataPresence }) {
+function NordBoard({ id, onHasData }) {
 	const [nordData, setNordData] = useState([]);
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
@@ -34,10 +34,11 @@ function NordBoard({ id, onDataPresence }) {
 					(a, b) => new Date(a.date) - new Date(b.date),
 				);
 				setNordData(sortedData);
-                if (onDataPresence) onDataPresence(sortedData.length > 0);
+                if (onHasData) onHasData(sortedData.length > 0);
 			} else {
 				console.error("Error getting nordboard data:", error);
 				setNordData([]);
+				if (onHasData) onHasData(false);
 			}
 			setLoading(false);
 		}

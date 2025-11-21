@@ -19,6 +19,7 @@ function Recruitment() {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [selectedType, setSelectedType] = useState(null);
 	const [formData, setFormData] = useState({});
+	const [showSearchDropdown, setShowSearchDropdown] = useState(false);
 	const [hasNordData, setHasNordData] = useState(false);
 	const [hasForcePlateData, setHasForcePlateData] = useState(false);
 
@@ -59,13 +60,10 @@ function Recruitment() {
 		});
 	};
 
-	// Filter athletes by position and search query (calculate before early returns)
+	// Filter athletes by position only (search query only affects dropdown, not main view)
 	let filteredAthletes = athletes.filter((athlete) => {
 		const matchesPosition = !selectedPosition || athlete.position === selectedPosition;
-		const matchesSearch = !searchQuery || 
-			athlete.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			athlete.position.toLowerCase().includes(searchQuery.toLowerCase());
-		return matchesPosition && matchesSearch;
+		return matchesPosition;
 	});
 
 	// Sort by last name alphabetically
@@ -94,9 +92,9 @@ function Recruitment() {
 	
 
 	return (
-		<div className="min-h-screen bg-white">
+		<div className="min-h-screen bg-[#022851]">
 			{/* Header */}
-			<header className="fixed top-0 left-0 right-0 bg-white shadow-sm z-50">
+			<header className="fixed top-0 left-0 right-0 bg-[#022851] shadow-lg border-b border-[#FFBF00]/20 z-50">
 				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
 					<div className="flex justify-between items-center">
 						<div className="flex items-center gap-3">
@@ -107,26 +105,102 @@ function Recruitment() {
 							/>
 							<h1 
 								onClick={() => window.location.href = '/'}
-								className="text-2xl font-bold text-[#0B1340] cursor-pointer hover:text-[#B4975A] transition-colors"
+								className="text-2xl font-bold text-white cursor-pointer hover:text-[#FFBF00] transition-colors"
 							>
 								ProTech
 							</h1>
 						</div>
 						<div className="flex items-center space-x-4">
 							<div className="flex items-center space-x-4 mt-2 space-y-4">
-								<input
-									type="text"
-									placeholder="Search athletes..."
-									value={searchQuery}
-									onChange={(e) => setSearchQuery(e.target.value)}
-									className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B4975A] focus:border-transparent"
-								/>
+								{/* Search Dropdown */}
+								<div className="relative">
+									<input
+										type="text"
+										placeholder="Search athletes..."
+										value={searchQuery}
+										onChange={(e) => {
+											setSearchQuery(e.target.value);
+											setShowSearchDropdown(e.target.value.length > 0);
+										}}
+										onFocus={() => {
+											if (searchQuery.length > 0) {
+												setShowSearchDropdown(true);
+											}
+										}}
+										onBlur={() => {
+											// Delay to allow click on dropdown item
+											setTimeout(() => setShowSearchDropdown(false), 200);
+										}}
+										className="px-4 py-2 bg-white border border-gray-300 text-[#022851] placeholder:text-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFBF00] focus:border-[#FFBF00] w-64"
+									/>
+									{showSearchDropdown && searchQuery.trim() && (() => {
+										// Show all athletes matching search, regardless of position filter
+										const searchMatches = sortByLastName(
+											athletes.filter((athlete) => 
+												athlete.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+												athlete.position?.toLowerCase().includes(searchQuery.toLowerCase())
+											)
+										);
+										
+										return (
+											<div className="absolute z-50 w-64 mt-1 bg-[#022851] border border-[#FFBF00]/30 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+												{searchMatches.length > 0 ? (
+													searchMatches.map((athlete, idx) => (
+														<button
+															key={athlete.id || idx}
+															type="button"
+															onMouseDown={(e) => {
+																// Use onMouseDown to prevent onBlur from firing first
+																e.preventDefault();
+															}}
+															onClick={() => {
+																// First, check if we need to clear position filter
+																const needsPositionClear = selectedPosition && athlete.position !== selectedPosition;
+																
+																if (needsPositionClear) {
+																	setSelectedPosition("");
+																}
+																
+																// Wait a tick for state to update, then find and navigate to athlete
+																setTimeout(() => {
+																	// Recalculate filtered list (now without position filter if we cleared it)
+																	const currentFiltered = sortByLastName(
+																		athletes.filter((a) => {
+																			if (needsPositionClear) {
+																				return true; // Show all if we cleared position filter
+																			}
+																			return !selectedPosition || a.position === selectedPosition;
+																		})
+																	);
+																	
+																	const index = currentFiltered.findIndex(a => a.id === athlete.id);
+																	if (index !== -1) {
+																		setCurrentIndex(index);
+																	}
+																}, 0);
+																
+																setSearchQuery("");
+																setShowSearchDropdown(false);
+															}}
+															className="w-full text-left px-4 py-2 hover:bg-[#FFBF00]/20 focus:bg-[#FFBF00]/20 focus:outline-none transition-colors border-b border-[#FFBF00]/10 last:border-b-0"
+														>
+															<div className="font-medium text-white">{athlete.name}</div>
+															<div className="text-sm text-[#FFBF00]">{athlete.position}</div>
+														</button>
+													))
+												) : (
+													<div className="px-4 py-2 text-gray-400 text-sm">No athletes found</div>
+												)}
+											</div>
+										);
+									})()}
+								</div>
 								<select
-									className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B4975A] focus:border-transparent"
+									className="px-4 py-2 bg-white/10 border border-[#FFBF00]/30 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFBF00] focus:border-[#FFBF00] [&>option]:bg-[#022851] [&>option]:text-white"
 									value={selectedPosition}
 									onChange={(e) => setSelectedPosition(e.target.value)}
 								>
-									<option value="">All Positions</option>
+									<option value="" className="bg-[#022851] text-white">All Positions</option>
 									{[...new Set(athletes.map(athlete => athlete.position))].map(position => (
 										<option key={position} value={position}>{position}</option>
 									))}
@@ -134,7 +208,7 @@ function Recruitment() {
 								<button
 									onClick={() => setIsModalOpen(true)}
 									type="button"
-									className="bg-[#B4975A] hover:bg-[#8B7443] text-white rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#B4975A] flex items-center"
+									className="bg-[#FFBF00] hover:bg-[#FFD700] text-[#022851] font-semibold rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FFBF00] flex items-center"
 									style={{ transform: "translateY(-10px)" }}   // ← move up 4px
 
 								>
@@ -154,7 +228,7 @@ function Recruitment() {
 						<div className="fixed top-1/2 -translate-y-1/2 left-4 z-10">
 							<button
 								onClick={() => setCurrentIndex((prev) => (prev > 0 ? prev - 1 : filteredAthletes.length - 1))}
-								className="p-1 text-black hover:text-gray-600 transition-colors"
+								className="p-2 bg-[#FFBF00] hover:bg-[#FFD700] text-[#022851] transition-colors rounded-full shadow-lg"
 								aria-label="Previous athlete"
 							>
 								<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -165,7 +239,7 @@ function Recruitment() {
 						<div className="fixed top-1/2 -translate-y-1/2 right-4 z-10">
 							<button
 								onClick={() => setCurrentIndex((prev) => (prev < filteredAthletes.length - 1 ? prev + 1 : 0))}
-								className="p-1 text-black hover:text-gray-600 transition-colors"
+								className="p-2 bg-[#FFBF00] hover:bg-[#FFD700] text-[#022851] transition-colors rounded-full shadow-lg"
 								aria-label="Next athlete"
 							>
 								<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -189,8 +263,8 @@ function Recruitment() {
 							<div className="mt-12 space-y-8">
 								{/* Performance Overview */}
 								<div className="mb-8">
-									<h2 className="text-xl font-semibold text-[#0B1340] mb-4">Performance Overview</h2>
-									<div className="bg-white rounded-lg shadow-sm p-6">
+									<h2 className="text-xl font-semibold text-white mb-4">Performance Overview</h2>
+									<div className="bg-white rounded-lg shadow-lg p-6">
 										<AthleteComparisonChart id={filteredAthletes[currentIndex].id} />
 									</div>
 								</div>
@@ -201,17 +275,17 @@ function Recruitment() {
 									<ForcePlate id={filteredAthletes[currentIndex].id} onHasData={setHasForcePlateData} />
 								</div>
 
-								{/* NordBoard Data */}
-								{hasNordData && (
-									<div className="bg-white rounded-lg shadow-sm p-6">
+						{/* NordBoard Data */}
+						{hasNordData && (
+							<div className="bg-white rounded-lg shadow-lg p-6">
 										
 										<NordBoard id={filteredAthletes[currentIndex].id} />
 									</div>
 								)}
 
-								{/* Force Plate Data */}
-								{hasForcePlateData && (
-									<div className="bg-white rounded-lg shadow-sm p-6">
+						{/* Force Plate Data */}
+						{hasForcePlateData && (
+							<div className="bg-white rounded-lg shadow-lg p-6">
 										
 										<ForcePlate id={filteredAthletes[currentIndex].id} />
 									</div>
@@ -219,13 +293,13 @@ function Recruitment() {
 							</div>
 						)}
 
-						{/* Page Indicator */}
-						<div className="text-center mt-2 text-sm text-gray-400">
-							{currentIndex + 1} / {filteredAthletes.length}
-						</div>
+				{/* Page Indicator */}
+				<div className="text-center mt-2 text-sm text-[#FFBF00]">
+					{currentIndex + 1} / {filteredAthletes.length}
+				</div>
 					</div>
 				) : (
-					<div className="text-center text-gray-500">No athletes found matching your criteria.</div>
+					<div className="text-center text-gray-400">No athletes found matching your criteria.</div>
 				)}
 			</main>
 
@@ -238,7 +312,7 @@ function Recruitment() {
 				setFormData={setFormData}
 			/>
 
-			<div className="fixed bottom-0 left-0 right-0 bg-white shadow-sm z-50">
+			<div className="fixed bottom-0 left-0 right-0 bg-[#022851] border-t border-[#FFBF00]/20 shadow-lg z-50">
 				
 				<div>
 					<AddDataModal

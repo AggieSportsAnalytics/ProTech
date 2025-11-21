@@ -1,45 +1,64 @@
 import { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
 import supabase from "../utils/supabase";
 
 function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) {
+	if (!athlete) {
+		return <div className="p-8 text-gray-500">No athlete data available</div>;
+	}
+
 	const availableYears = useMemo(
-		() => athlete.stats.map((stat) => stat.year),
+		() => {
+			if (!athlete?.stats || !Array.isArray(athlete.stats)) {
+				return [];
+			}
+			return athlete.stats.map((stat) => stat?.year).filter(Boolean);
+		},
 		[athlete],
 	);
 	const [imageUrls, setImageUrls] = useState([]);
-	const [imageLoading, setImageLoading] = useState(true);
+	const [imageLoading, setImageLoading] = useState(false);
 
 	useEffect(() => {
 		const getImages = async () => {
-			if (!athlete?.id || !availableYears) {
+			if (!athlete?.id || !availableYears || availableYears.length === 0) {
+				setImageUrls([]);
+				setImageLoading(false);
 				return;
 			}
+			// Don't clear existing images immediately - show them while loading new ones
 			setImageLoading(true);
 			try {
-				const imageResults = await Promise.all(
-					availableYears.map(async (year) => {
-						// Try different image formats
-						const formats = ['jpg', 'jpeg', 'png'];
-						for (const format of formats) {
-							const path = `${athlete.id}/${year}.${format}`;
-							const { data: urlData } = supabase.storage
-								.from("athlete-images")
-								.getPublicUrl(path);
-							
-							// Check if image exists by trying to load it
-							try {
-								const response = await fetch(urlData.publicUrl, { method: 'HEAD' });
-								if (response.ok) {
-									return { year, url: urlData.publicUrl };
-								}
-							} catch (error) {
-								console.log(`Failed to load image for ${year} in ${format} format`);
-							}
-						}
-						return { year, url: null }; // Return null if no format works
-					})
-				);
+				// List all files in the athlete's folder
+				const { data: files, error } = await supabase.storage
+					.from("athlete-images")
+					.list(`${athlete.id}`, {
+						limit: 100,
+						offset: 0,
+					});
+
+				if (error) {
+					console.log('Error listing images:', error);
+					setImageUrls([]);
+					setImageLoading(false);
+					return;
+				}
+
+				// Match files to years and build URLs
+				const imageResults = availableYears.map((year) => {
+					// Find matching file for this year
+					const matchingFile = files?.find(file => {
+						const fileName = file.name.toLowerCase();
+						return fileName.startsWith(`${year}.`) || fileName.startsWith(`${year}_`);
+					});
+
+					if (matchingFile) {
+						const { data: urlData } = supabase.storage
+							.from("athlete-images")
+							.getPublicUrl(`${athlete.id}/${matchingFile.name}`);
+						return { year, url: urlData.publicUrl };
+					}
+					return { year, url: null };
+				});
 
 				// Filter out failed images and set URLs
 				const validUrls = imageResults
@@ -59,26 +78,18 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 	}, [athlete, availableYears]);
 
 	return (
-		<div className="bg-white">
+		<div className="bg-white/5 border border-[#FFBF00]/20 rounded-lg p-6">
 			{/* Header Section */}
-			<div className="flex justify-between items-start my-6">
+			<div className="my-6">
 				<div>
-					<h2 className="text-3xl font-bold text-[#0B1340] mb-2">{athlete.name}</h2>
-					<div className="flex gap-6 text-gray-600">
-						<p><span className="font-medium">Position:</span> {athlete.position}</p>
-						<p><span className="font-medium">Height:</span> {athlete.height}</p>
-						<p><span className="font-medium">Wing:</span> {athlete.wing}</p>
-						<p><span className="font-medium">Hand:</span> {athlete.hand}</p>
+					<h2 className="text-3xl font-bold text-white mb-2">{athlete.name}</h2>
+					<div className="flex gap-6 text-gray-300">
+						<p><span className="font-medium text-[#FFBF00]">Position:</span> {athlete.position}</p>
+						<p><span className="font-medium text-[#FFBF00]">Height:</span> {athlete.height}</p>
+						<p><span className="font-medium text-[#FFBF00]">Wing:</span> {athlete.wing}</p>
+						<p><span className="font-medium text-[#FFBF00]">Hand:</span> {athlete.hand}</p>
 					</div>
 				</div>
-				<Link
-					to={`/data/${athlete.id}`}
-					className="bg-[#B4975A] hover:bg-[#8B7443] text-white px-4 py-2 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#B4975A] flex items-center"
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-					</svg>
-				</Link>
 			</div>
 
 			{/* Container for Images + Stats section */}
@@ -86,12 +97,13 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 
 			{/* Images Section */}
 			<div className="overflow-x-auto">
-				<h3 className="text-xl font-semibold text-[#0B1340] mb-4 text-center">Progress Photos</h3>
+				<h3 className="text-xl font-semibold text-[#FFBF00] mb-4 text-center">Progress Photos</h3>
 					{imageLoading ? (
 						<div className="flex items-center justify-center h-[50vh]">
-						<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0B1340]"></div>
-					</div>
-				) : imageUrls.length > 0 ? (
+							<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FFBF00]"></div>
+							<span className="ml-3 text-gray-300">Loading images...</span>
+						</div>
+					) : imageUrls.length > 0 ? (
 				<div className="flex space-x-6 pb-4 justify-center">
 					{imageUrls.map((image, index) => (
 					<div key={index} className="relative flex-shrink-0 rounded-lg shadow-md">
@@ -112,7 +124,7 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 					))}
 				</div>
 				) : (
-				<div className="flex items-center justify-center h-[50vh] text-gray-500">
+				<div className="flex items-center justify-center h-[50vh] text-gray-400">
 					No photos available
 				</div>
 				)}
@@ -120,27 +132,33 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 
 			{/* Right: Stats Section */}
 			<div>
-			<h3 className="text-xl font-semibold text-[#0B1340] mb-4 text-center">
+			<h3 className="text-xl font-semibold text-[#FFBF00] mb-4 text-center">
 				Performance Stats
 			</h3>
 			<div className="overflow-y-auto max-h-96">
-				<table className="min-w-full divide-y divide-gray-200">
-				<thead className="bg-gray-50">
+				<table className="min-w-full divide-y divide-[#FFBF00]/20">
+				<thead className="bg-[#FFBF00]/10">
 					<tr>
-					<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+					<th className="px-6 py-3 text-left text-xs font-medium text-[#FFBF00] uppercase tracking-wider">
 						Stat
 					</th>
-					{athlete.stats.map((stat) => (
-						<th
-						key={stat.year}
-						className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-						>
-						{stat.year}
+					{athlete.stats && Array.isArray(athlete.stats) && athlete.stats.length > 0 ? (
+						athlete.stats.map((stat) => (
+							<th
+							key={stat?.year}
+							className="px-6 py-3 text-left text-xs font-medium text-[#FFBF00] uppercase tracking-wider"
+							>
+							{stat?.year || 'N/A'}
+							</th>
+						))
+					) : (
+						<th className="px-6 py-3 text-left text-xs font-medium text-[#FFBF00] uppercase tracking-wider">
+							No Data
 						</th>
-					))}
+					)}
 					</tr>
 				</thead>
-				<tbody className="bg-white divide-y divide-gray-200">
+				<tbody className="bg-white/5 divide-y divide-[#FFBF00]/20">
 					{[
 					["Body Weight", "bodyWeight"],
 					["Vertical Jump", "verticalJump"],
@@ -154,13 +172,17 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 					["Back Squat", "backSquat"],
 					["Incline Bench", "inclineBench"],
 					].map(([label, key]) => (
-					<tr key={key} className="hover:bg-gray-50">
-						<td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{label}</td>
-						{athlete.stats.map((stat) => (
-						<td key={stat.year + key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-							{stat[key]}
-						</td>
-						))}
+					<tr key={key} className="hover:bg-[#FFBF00]/10">
+						<td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{label}</td>
+						{athlete.stats && Array.isArray(athlete.stats) && athlete.stats.length > 0 ? (
+							athlete.stats.map((stat) => (
+							<td key={stat?.year + key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+								{stat?.[key] || "-"}
+							</td>
+							))
+						) : (
+							<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">-</td>
+						)}
 					</tr>
 					))}
 				</tbody>
