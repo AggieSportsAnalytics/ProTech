@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import "../Index.css";
+import "../index.css";
 import Loader from "../components/Loader";
 import supabase from "../utils/supabase";
 import RecruitmentModal from "../components/RecruitmentModal";
