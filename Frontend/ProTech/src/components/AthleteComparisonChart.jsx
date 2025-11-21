@@ -44,6 +44,12 @@ const AthleteComparisonChart = ({ id }) => {
 	const [loading, setLoading] = useState(false);
 	const [mainAthlete, setMainAthlete] = useState({});
 	const [averages, setAverages] = useState({});
+	const [comparisonTarget, setComparisonTarget] = useState("team");
+	const [comparisonOptions, setComparisonOptions] = useState([
+		{ value: "team", label: "Position Average" },
+	]);
+	const [comparisonDataset, setComparisonDataset] = useState(null);
+	const [playerCache, setPlayerCache] = useState({});
 
 	function getLatestStats(stats) {
 		const statKeys = [
@@ -87,7 +93,7 @@ const AthleteComparisonChart = ({ id }) => {
 		"fortyYard",
 	];
 
-	const fetchAndSetAthlete = async (athleteId, setter) => {
+	const fetchAthleteProfile = async (athleteId) => {
 		const { data, error } = await supabase
 			.from("Athlete_Data")
 			.select("*")
@@ -96,13 +102,12 @@ const AthleteComparisonChart = ({ id }) => {
 
 		if (error) {
 			console.error("Supabase error:", error);
-			return;
+			return null;
 		}
 
 		const { stats, ...core } = data;
 		const latest = getLatestStats(stats) || {};
-		setter({ ...core, ...latest });
-		return data.position;
+		return { ...core, ...latest };
 	};
 
 	const calcAverages = async (position) => {
@@ -137,6 +142,24 @@ const AthleteComparisonChart = ({ id }) => {
 		setAverages(result);
 	};
 
+	const fetchComparisonOptions = async (position, excludeId) => {
+		const { data, error } = await supabase
+			.from("Athlete_Data")
+			.select("id,name")
+			.eq("position", position);
+
+		if (error || !data) return;
+
+		const filtered = data.filter((athlete) => athlete.id !== excludeId);
+		setComparisonOptions([
+			{ value: "team", label: "Position Average" },
+			...filtered.map((athlete) => ({
+				value: athlete.id,
+				label: athlete.name,
+			})),
+		]);
+	};
+
 	useEffect(() => {
 		const init = async () => {
 			if (!id) {
@@ -145,9 +168,15 @@ const AthleteComparisonChart = ({ id }) => {
 			}
 			setLoading(true);
 			try {
-				const position = await fetchAndSetAthlete(id, setMainAthlete);
-				if (position) {
-					await calcAverages(position);
+				const profile = await fetchAthleteProfile(id);
+				if (!profile) {
+					setLoading(false);
+					return;
+				}
+				setMainAthlete(profile);
+				if (profile.position) {
+					await calcAverages(profile.position);
+					await fetchComparisonOptions(profile.position, profile.id);
 				}
 			} catch (error) {
 				console.error("Error initializing chart:", error);
@@ -191,6 +220,77 @@ const AthleteComparisonChart = ({ id }) => {
 		return { normalizedValues, rawValues };
 	};
 
+	const buildPlayerDataset = (
+		athlete,
+		color = "rgba(255, 191, 0, 0.2)",
+		border = "rgb(255, 191, 0)",
+	) => {
+		if (!athlete || !athlete.name) return null;
+		const { normalizedValues, rawValues } = getNormalizedData(athlete);
+		return {
+			label: athlete.name,
+			data: normalizedValues,
+			backgroundColor: color,
+			borderColor: border,
+			pointBackgroundColor: border,
+			fill: true,
+			rawValues,
+		};
+	};
+
+	const buildTeamDataset = () => {
+		const rawValues = [
+			averages?.inclineBench || 0,
+			averages?.backSquat || 0,
+			averages?.hangClean || 0,
+			averages?.tenYard || 0,
+			averages?.flyingTen || 0,
+			averages?.fortyYard || 0,
+		];
+
+		return {
+			label: "Position Average",
+			data: Array(statKeys.length).fill(5),
+			backgroundColor: "rgba(128, 128, 128, 0.2)",
+			borderColor: "rgb(128, 128, 128)",
+			pointBackgroundColor: "rgb(128, 128, 128)",
+			fill: true,
+			rawValues,
+		};
+	};
+
+	useEffect(() => {
+		const updateComparisonDataset = async () => {
+			if (!comparisonTarget || !averages) return;
+
+			if (comparisonTarget === "team") {
+				setComparisonDataset(buildTeamDataset());
+				return;
+			}
+
+			let profile = playerCache[comparisonTarget];
+			if (!profile) {
+				const fetched = await fetchAthleteProfile(comparisonTarget);
+				if (fetched) {
+					setPlayerCache((prev) => ({ ...prev, [comparisonTarget]: fetched }));
+					profile = fetched;
+				}
+			}
+
+			if (profile) {
+				setComparisonDataset(buildPlayerDataset(profile));
+			}
+		};
+
+		updateComparisonDataset();
+	}, [comparisonTarget, averages, playerCache]);
+
+	useEffect(() => {
+		if (averages && !comparisonDataset) {
+			setComparisonDataset(buildTeamDataset());
+		}
+	}, [averages, comparisonDataset]);
+
 	if (!mainAthlete || !mainAthlete.name) {
 		if (loading) {
 			return (
@@ -208,29 +308,26 @@ const AthleteComparisonChart = ({ id }) => {
 	}
 
 	const athleteData = getNormalizedData(mainAthlete);
-	
+
+	const datasets = [
+		{
+			label: mainAthlete.name,
+			data: athleteData.normalizedValues,
+			backgroundColor: "rgba(11, 19, 64, 0.2)",
+			borderColor: "rgb(11, 19, 64)",
+			pointBackgroundColor: "rgb(11, 19, 64)",
+			fill: true,
+			rawValues: athleteData.rawValues,
+		},
+	];
+
+	if (comparisonDataset) {
+		datasets.push(comparisonDataset);
+	}
+
 	const data = {
 		labels,
-		datasets: [
-			{
-				label: mainAthlete.name,
-				data: athleteData.normalizedValues,
-				backgroundColor: "rgba(11, 19, 64, 0.2)",
-				borderColor: "rgb(11, 19, 64)",
-				pointBackgroundColor: "rgb(11, 19, 64)",
-				fill: true,
-				rawValues: athleteData.rawValues,
-			},
-			{
-				label: "Position Average",
-				data: [5, 5, 5, 5, 5, 5], // Center point on the 0-10 scale
-				backgroundColor: "rgba(128, 128, 128, 0.2)",
-				borderColor: "rgb(128, 128, 128)",
-				pointBackgroundColor: "rgb(128, 128, 128)",
-				fill: true,
-				rawValues: Object.values(averages),
-			},
-		],
+		datasets,
 	};
 
 	const options = {
@@ -259,6 +356,22 @@ const AthleteComparisonChart = ({ id }) => {
 
 	return (
 		<div className="p-4 max-w-xl mx-auto">
+			<div className="flex justify-end items-center mb-4 gap-2">
+				<label className="text-sm font-medium text-gray-600">
+					Compare against:
+				</label>
+				<select
+					value={comparisonTarget}
+					onChange={(e) => setComparisonTarget(e.target.value)}
+					className="border border-gray-300 rounded px-3 py-2 text-sm"
+				>
+					{comparisonOptions.map((option) => (
+						<option key={option.value} value={option.value}>
+							{option.label}
+						</option>
+					))}
+				</select>
+			</div>
 			{loading ? (
 				<div className="flex items-center justify-center min-h-[400px]">
 					<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0B1340]"></div>
