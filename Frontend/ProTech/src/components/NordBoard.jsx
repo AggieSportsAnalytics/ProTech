@@ -688,6 +688,8 @@ function NordBoard({ id, onHasData }) {
 									onClick={() => {
 										setActiveForm("max_imbalance_percent");
 										setActiveRemoveView(null);
+										setUploadMode(null);
+										setExcelFile(null);
 										setFormDate("");
 										setFormValue("");
 										setFormError("");
@@ -743,6 +745,8 @@ function NordBoard({ id, onHasData }) {
 										onClick={() => {
 											setActiveForm("R_max_force_n");
 											setActiveRemoveView(null);
+											setUploadMode(null);
+											setExcelFile(null);
 											setFormDate("");
 											setFormValue("");
 											setFormError("");
@@ -803,6 +807,8 @@ function NordBoard({ id, onHasData }) {
 										onClick={() => {
 											setActiveForm("L_max_force_n");
 											setActiveRemoveView(null);
+											setUploadMode(null);
+											setExcelFile(null);
 											setFormDate("");
 											setFormValue("");
 											setFormError("");

@@ -786,6 +786,8 @@ function ForcePlate({ id, onHasData }) {
 										onClick={() => {
 											setActiveForm("rsi_modified_meters_sec");
 											setActiveRemoveView(null);
+											setUploadMode(null);
+											setExcelFile(null);
 											setFormDate("");
 											setFormValue("");
 											setFormError("");
@@ -842,6 +844,8 @@ function ForcePlate({ id, onHasData }) {
 										onClick={() => {
 											setActiveForm("jump_height_cm");
 											setActiveRemoveView(null);
+											setUploadMode(null);
+											setExcelFile(null);
 											setFormDate("");
 											setFormValue("");
 											setFormError("");
