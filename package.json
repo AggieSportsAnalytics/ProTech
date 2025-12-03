@@ -1,0 +1,8 @@
+{
+  "type": "module",
+  "devDependencies": {
+    "@tensorflow-models/blazeface": "^0.1.0",
+    "canvas": "^3.2.0",
+    "sharp": "^0.34.5"
+  }
+}
