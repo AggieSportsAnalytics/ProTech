@@ -110,7 +110,7 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 						<img
 						src={image}
 						alt={`${athlete.name} - ${availableYears[index]}`}
-						className="h-[60vh] w-auto"
+						className="h-[80vh] w-auto"
 						loading="lazy"
 						onError={(e) => {
 							e.target.onerror = null;
