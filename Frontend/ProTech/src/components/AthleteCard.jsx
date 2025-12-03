@@ -93,10 +93,10 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 			</div>
 
 			{/* Container for Images + Stats section */}
-			<div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+			<div className="flex flex-col items-center gap-8 mb-8">
 
 			{/* Images Section */}
-			<div className="overflow-x-auto">
+			<div className="w-full overflow-x-auto">
 				<h3 className="text-xl font-semibold text-[#FFBF00] mb-4 text-center">Progress Photos</h3>
 					{imageLoading ? (
 						<div className="flex items-center justify-center h-[50vh]">
@@ -130,12 +130,13 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 				)}
 			</div>
 
-			{/* Right: Stats Section */}
-			<div>
+			{/* Stats Section - Below Images */}
+			<div className="w-full flex flex-col items-center">
 			<h3 className="text-xl font-semibold text-[#FFBF00] mb-4 text-center">
 				Performance Stats
 			</h3>
-			<div className="overflow-y-auto max-h-96">
+			<div className="overflow-y-auto max-h-96 w-full flex justify-center">
+				<div className="w-full max-w-4xl">
 				<table className="min-w-full divide-y divide-[#FFBF00]/20">
 				<thead className="bg-[#FFBF00]/10">
 					<tr>
@@ -187,6 +188,7 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 					))}
 				</tbody>
 				</table>
+				</div>
 			</div>
 			</div>
 		</div>

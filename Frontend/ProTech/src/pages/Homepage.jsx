@@ -16,6 +16,27 @@ function LoginPage() {
 		}
 	}, [user, navigate]);
 
+	// Debug: Check Supabase connection on mount
+	useEffect(() => {
+		console.log("=== HOMEPAGE MOUNTED ===");
+		const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+		const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+		console.log("Homepage - URL:", supabaseUrl ? "✓ Set" : "✗ Missing");
+		console.log("Homepage - Key:", supabaseKey ? "✓ Set" : "✗ Missing");
+		
+		// Clear any stale Supabase tokens from localStorage
+		if (typeof window !== 'undefined') {
+			const keys = Object.keys(localStorage);
+			keys.forEach(key => {
+				if (key.includes('supabase') || key.includes('sb-')) {
+					console.log("Clearing cached token:", key);
+					localStorage.removeItem(key);
+				}
+			});
+			console.log("✓ Cleared cached Supabase tokens");
+		}
+	}, []);
+
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		setSubmitting(true);
@@ -36,7 +57,19 @@ function LoginPage() {
 				if (error) throw error;
 			}
 		} catch (err) {
-			setMessage(err.message || "Something went wrong.");
+			console.error("Login error:", err);
+			let errorMessage = err.message || "Something went wrong.";
+			
+			// Provide more helpful error messages
+			if (err.message?.includes("Failed to fetch") || err.message?.includes("fetch")) {
+				errorMessage = "Network error: Unable to connect to Supabase. Please check your internet connection and ensure your Supabase environment variables are configured correctly.";
+			} else if (err.message?.includes("Invalid login credentials")) {
+				errorMessage = "Invalid email or password. Please try again.";
+			} else if (err.message?.includes("Email not confirmed")) {
+				errorMessage = "Please check your email and confirm your account before signing in.";
+			}
+			
+			setMessage(errorMessage);
 		} finally {
 			setSubmitting(false);
 		}
