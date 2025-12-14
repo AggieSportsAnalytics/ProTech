@@ -673,39 +673,39 @@ function ForcePlate({ id, onHasData }) {
 				)}
 
 				{uploadMode === 'single' && (
-					<div className="flex flex-col gap-3 md:flex-row">
-						<input
-							type="date"
-							className="border border-gray-300 rounded px-3 py-2 text-sm"
-							value={formDate}
-							onChange={(e) => setFormDate(e.target.value)}
-						/>
-						<input
-							type="number"
-							step="any"
-							className="border border-gray-300 rounded px-3 py-2 text-sm"
-							value={formValue}
-							onChange={(e) => setFormValue(e.target.value)}
-							placeholder="Value"
-						/>
-						<div className="flex gap-2">
-							<button
-								type="button"
-								onClick={() => handleForcePlateSave(field)}
-								className="bg-[#FFBF00] hover:bg-[#FFD700] text-[#022851] font-semibold px-4 py-2 rounded-lg transition-colors duration-200"
-								disabled={isSubmitting}
-							>
-								{isSubmitting ? "Saving..." : "Save"}
-							</button>
-							<button
-								type="button"
-								onClick={closeForm}
-								className="border border-white/40 text-white px-4 py-2 rounded-lg"
-							>
-								Cancel
-							</button>
-						</div>
+				<div className="flex flex-col gap-3 md:flex-row">
+					<input
+						type="date"
+						className="border border-gray-300 rounded px-3 py-2 text-sm"
+						value={formDate}
+						onChange={(e) => setFormDate(e.target.value)}
+					/>
+					<input
+						type="number"
+						step="any"
+						className="border border-gray-300 rounded px-3 py-2 text-sm"
+						value={formValue}
+						onChange={(e) => setFormValue(e.target.value)}
+						placeholder="Value"
+					/>
+					<div className="flex gap-2">
+						<button
+							type="button"
+							onClick={() => handleForcePlateSave(field)}
+							className="bg-[#FFBF00] hover:bg-[#FFD700] text-[#022851] font-semibold px-4 py-2 rounded-lg transition-colors duration-200"
+							disabled={isSubmitting}
+						>
+							{isSubmitting ? "Saving..." : "Save"}
+						</button>
+						<button
+							type="button"
+							onClick={closeForm}
+							className="border border-white/40 text-white px-4 py-2 rounded-lg"
+						>
+							Cancel
+						</button>
 					</div>
+				</div>
 				)}
 
 				{uploadMode === 'excel' && (
@@ -781,21 +781,21 @@ function ForcePlate({ id, onHasData }) {
 							<div className="flex justify-between items-center mb-4">
 								<h2 className="text-xl font-semibold">RSI Modified (m/s)</h2>
 								<div className="flex gap-2">
-									<button
-										type="button"
-										onClick={() => {
-											setActiveForm("rsi_modified_meters_sec");
+								<button
+									type="button"
+									onClick={() => {
+										setActiveForm("rsi_modified_meters_sec");
 											setActiveRemoveView(null);
 											setUploadMode(null);
 											setExcelFile(null);
-											setFormDate("");
-											setFormValue("");
-											setFormError("");
-										}}
-										className="bg-[#FFBF00] hover:bg-[#FFD700] text-[#022851] font-semibold px-4 py-2 rounded-lg transition-colors duration-200"
-									>
-										Add Data
-									</button>
+										setFormDate("");
+										setFormValue("");
+										setFormError("");
+									}}
+									className="bg-[#FFBF00] hover:bg-[#FFD700] text-[#022851] font-semibold px-4 py-2 rounded-lg transition-colors duration-200"
+								>
+									Add Data
+								</button>
 									<button
 										type="button"
 										onClick={() => {
@@ -839,21 +839,21 @@ function ForcePlate({ id, onHasData }) {
 							<div className="flex justify-between items-center mb-4">
 								<h2 className="text-xl font-semibold">Jump Height (cm)</h2>
 								<div className="flex gap-2">
-									<button
-										type="button"
-										onClick={() => {
-											setActiveForm("jump_height_cm");
+								<button
+									type="button"
+									onClick={() => {
+										setActiveForm("jump_height_cm");
 											setActiveRemoveView(null);
 											setUploadMode(null);
 											setExcelFile(null);
-											setFormDate("");
-											setFormValue("");
-											setFormError("");
-										}}
-										className="bg-[#FFBF00] hover:bg-[#FFD700] text-[#022851] font-semibold px-4 py-2 rounded-lg transition-colors duration-200"
-									>
-										Add Data
-									</button>
+										setFormDate("");
+										setFormValue("");
+										setFormError("");
+									}}
+									className="bg-[#FFBF00] hover:bg-[#FFD700] text-[#022851] font-semibold px-4 py-2 rounded-lg transition-colors duration-200"
+								>
+									Add Data
+								</button>
 									<button
 										type="button"
 										onClick={() => {

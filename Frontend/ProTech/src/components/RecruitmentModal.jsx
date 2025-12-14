@@ -108,15 +108,30 @@ function RecruitmentModal({ isModalOpen, setIsModalOpen, selectedType, setSelect
 		window.alert("Successfully uploaded data");
 
 		if (athleteImage && formData.year) {
-			const { error } = await supabase.storage
-				.from("athlete-images")
-				.upload(`${id}/${formData.year}.jpg`, athleteImage, {
-					cacheControl: "3600",
-					upsert: true,
-				});
+			// Get the name from names database to construct folder name
+			const { data: nameData, error: nameError } = await supabase
+				.from("names")
+				.select("name")
+				.eq("id", id)
+				.single();
 
-			if (error) {
-				console.error(error);
+			if (nameError) {
+				console.error("Error fetching name for folder:", nameError);
+			} else {
+				// Construct folder name: "Player Name-UUID"
+				const sanitizedName = nameData.name.replace(/[<>:"/\\|?*]/g, '-').trim();
+				const folderName = `${sanitizedName}-${id}`;
+				
+				const { error } = await supabase.storage
+					.from("athlete-images")
+					.upload(`${folderName}/${formData.year}.jpg`, athleteImage, {
+						cacheControl: "3600",
+						upsert: true,
+					});
+
+				if (error) {
+					console.error("Image upload error:", error);
+				}
 			}
 		}
 
@@ -177,13 +192,28 @@ function RecruitmentModal({ isModalOpen, setIsModalOpen, selectedType, setSelect
 		setSelectedType(null);
 
 		if (athleteImage && formData.year) {
-			const { error: imgError } = await supabase.storage
-				.from("athlete-images")
-				.upload(`${formData.id}/${formData.year}.jpg`, athleteImage, {
-					cacheControl: "3600",
-					upsert: true,
-				});
-			if (imgError) console.error("image upload failed:", imgError);
+			// Get the name from names database to construct folder name
+			const { data: nameData, error: nameError } = await supabase
+				.from("names")
+				.select("name")
+				.eq("id", formData.id)
+				.single();
+
+			if (nameError) {
+				console.error("Error fetching name for folder:", nameError);
+			} else {
+				// Construct folder name: "Player Name-UUID"
+				const sanitizedName = nameData.name.replace(/[<>:"/\\|?*]/g, '-').trim();
+				const folderName = `${sanitizedName}-${formData.id}`;
+				
+				const { error: imgError } = await supabase.storage
+					.from("athlete-images")
+					.upload(`${folderName}/${formData.year}.jpg`, athleteImage, {
+						cacheControl: "3600",
+						upsert: true,
+					});
+				if (imgError) console.error("image upload failed:", imgError);
+			}
 		}
 
 		setLoading(false);

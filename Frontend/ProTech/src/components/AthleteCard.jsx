@@ -28,10 +28,49 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 			// Don't clear existing images immediately - show them while loading new ones
 			setImageLoading(true);
 			try {
+				// Get the athlete's name from names database to construct folder name
+				// Folders are now in "Player Name-UUID" format
+				const { data: nameData, error: nameError } = await supabase
+					.from("names")
+					.select("name")
+					.eq("id", athlete.id)
+					.single();
+
+				let athleteFolder = null;
+				
+				if (nameError || !nameData) {
+					// Fallback: search for folder ending with UUID
+					const { data: allFolders } = await supabase.storage
+						.from("athlete-images")
+						.list("", { limit: 1000 });
+
+					for (const item of allFolders || []) {
+						const { data: folderContents } = await supabase.storage
+							.from("athlete-images")
+							.list(item.name, { limit: 1 });
+						
+						if (folderContents !== null && (item.name.endsWith(`-${athlete.id}`) || item.name === athlete.id)) {
+							athleteFolder = item.name;
+							break;
+						}
+					}
+				} else {
+					// Construct folder name: "Player Name-UUID"
+					const sanitizedName = nameData.name.replace(/[<>:"/\\|?*]/g, '-').trim();
+					athleteFolder = `${sanitizedName}-${athlete.id}`;
+				}
+
+				if (!athleteFolder) {
+					console.log('No folder found for athlete:', athlete.id);
+					setImageUrls([]);
+					setImageLoading(false);
+					return;
+				}
+
 				// List all files in the athlete's folder
 				const { data: files, error } = await supabase.storage
 					.from("athlete-images")
-					.list(`${athlete.id}`, {
+					.list(athleteFolder, {
 						limit: 100,
 						offset: 0,
 					});
@@ -48,13 +87,13 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 					// Find matching file for this year
 					const matchingFile = files?.find(file => {
 						const fileName = file.name.toLowerCase();
-						return fileName.startsWith(`${year}.`) || fileName.startsWith(`${year}_`);
+						return fileName.startsWith(`${year}.`) || fileName.startsWith(`${year}_`) || fileName === `${year}.jpg` || fileName === `${year}.jpeg`;
 					});
 
 					if (matchingFile) {
 						const { data: urlData } = supabase.storage
 							.from("athlete-images")
-							.getPublicUrl(`${athlete.id}/${matchingFile.name}`);
+							.getPublicUrl(`${athleteFolder}/${matchingFile.name}`);
 						return { year, url: urlData.publicUrl };
 					}
 					return { year, url: null };
