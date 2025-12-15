@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Radar } from "react-chartjs-2";
 import supabase from "../utils/supabase";
 import Loader from "./Loader";
+import { formatNameFirstLast } from "../utils/nameFormat";
 import {
 	Chart as ChartJS,
 	RadialLinearScale,
@@ -155,7 +156,7 @@ const AthleteComparisonChart = ({ id }) => {
 			{ value: "team", label: "Position Average" },
 			...filtered.map((athlete) => ({
 				value: athlete.id,
-				label: athlete.name,
+				label: formatNameFirstLast(athlete.name),
 			})),
 		]);
 	};
@@ -228,7 +229,7 @@ const AthleteComparisonChart = ({ id }) => {
 		if (!athlete || !athlete.name) return null;
 		const { normalizedValues, rawValues } = getNormalizedData(athlete);
 		return {
-			label: athlete.name,
+			label: formatNameFirstLast(athlete.name),
 			data: normalizedValues,
 			backgroundColor: color,
 			borderColor: border,
@@ -311,7 +312,7 @@ const AthleteComparisonChart = ({ id }) => {
 
 	const datasets = [
 		{
-			label: mainAthlete.name,
+			label: formatNameFirstLast(mainAthlete.name),
 			data: athleteData.normalizedValues,
 			backgroundColor: "rgba(11, 19, 64, 0.2)",
 			borderColor: "rgb(11, 19, 64)",

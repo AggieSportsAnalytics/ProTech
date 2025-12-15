@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import * as XLSX from "xlsx";
 import supabase from "../utils/supabase";
+import { formatNameFirstLast } from "../utils/nameFormat";
 import Loader from "./Loader";
 
 function NordBoard({ id, onHasData }) {
@@ -675,7 +676,7 @@ function NordBoard({ id, onHasData }) {
 	return (
 		<>
 			<h1 className="text-2xl font-bold mb-6">
-				{nordData?.length > 0 && <p>NordBoard Data for {nordData[0].name}</p>}
+				{nordData?.length > 0 && <p>NordBoard Data for {formatNameFirstLast(nordData[0].name)}</p>}
 			</h1>
 			{nordData.length > 0 ? (
 				<>

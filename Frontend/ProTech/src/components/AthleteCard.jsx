@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import supabase from "../utils/supabase";
+import { formatNameFirstLast } from "../utils/nameFormat";
 
 function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) {
 	if (!athlete) {
@@ -11,7 +12,47 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 			if (!athlete?.stats || !Array.isArray(athlete.stats)) {
 				return [];
 			}
-			return athlete.stats.map((stat) => stat?.year).filter(Boolean);
+			// Sort years in ascending order (oldest first, newest last)
+			return athlete.stats
+				.map((stat) => stat?.year)
+				.filter(Boolean)
+				.sort((a, b) => a - b);
+		},
+		[athlete],
+	);
+	const sortedStats = useMemo(
+		() => {
+			if (!athlete?.stats || !Array.isArray(athlete.stats)) {
+				return [];
+			}
+			// Deduplicate stats by year - keep the most recent entry for each year
+			// First, create a map to track the latest stat for each year
+			const statsByYear = new Map();
+			
+			athlete.stats.forEach((stat) => {
+				if (!stat?.year) return;
+				const year = stat.year;
+				const existing = statsByYear.get(year);
+				
+				// If no existing entry for this year, or if this stat has more data, use it
+				if (!existing) {
+					statsByYear.set(year, stat);
+				} else {
+					// Keep the one with more non-null values, or prefer the existing one
+					const existingNonNull = Object.values(existing).filter(v => v !== null && v !== undefined).length;
+					const currentNonNull = Object.values(stat).filter(v => v !== null && v !== undefined).length;
+					if (currentNonNull > existingNonNull) {
+						statsByYear.set(year, stat);
+					}
+				}
+			});
+			
+			// Convert map to array and sort by year in ascending order (oldest first, newest last)
+			return Array.from(statsByYear.values()).sort((a, b) => {
+				const yearA = a?.year || 0;
+				const yearB = b?.year || 0;
+				return yearA - yearB;
+			});
 		},
 		[athlete],
 	);
@@ -99,10 +140,10 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 					return { year, url: null };
 				});
 
-				// Filter out failed images and set URLs
+				// Filter out failed images, sort by year (ascending - oldest first), and set URLs
 				const validUrls = imageResults
 					.filter(result => result.url !== null)
-					.map(result => result.url);
+					.sort((a, b) => a.year - b.year); // Sort by year ascending (oldest first)
 				
 				setImageUrls(validUrls);
 			} catch (error) {
@@ -121,7 +162,7 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 			{/* Header Section */}
 			<div className="my-6">
 				<div>
-					<h2 className="text-3xl font-bold text-white mb-2">{athlete.name}</h2>
+					<h2 className="text-3xl font-bold text-white mb-2">{formatNameFirstLast(athlete.name)}</h2>
 					<div className="flex gap-6 text-gray-300">
 						<p><span className="font-medium text-[#FFBF00]">Position:</span> {athlete.position}</p>
 						<p><span className="font-medium text-[#FFBF00]">Height:</span> {athlete.height}</p>
@@ -143,12 +184,12 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 							<span className="ml-3 text-gray-300">Loading images...</span>
 						</div>
 					) : imageUrls.length > 0 ? (
-				<div className="flex space-x-6 pb-4 justify-center">
-					{imageUrls.map((image, index) => (
+				<div className={`flex space-x-6 pb-4 ${imageUrls.length <= 3 ? 'justify-center' : 'justify-start'}`}>
+					{imageUrls.map((imageData, index) => (
 					<div key={index} className="relative flex-shrink-0 rounded-lg shadow-md">
 						<img
-						src={image}
-						alt={`${athlete.name} - ${availableYears[index]}`}
+						src={imageData.url}
+						alt={`${formatNameFirstLast(athlete.name)} - ${imageData.year}`}
 						className="h-[80vh] w-auto"
 						loading="lazy"
 						onError={(e) => {
@@ -157,7 +198,7 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 						}}
 						/>
 						<div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white py-2 px-3">
-						<p className="text-sm font-medium">{availableYears[index]}</p>
+						<p className="text-sm font-medium">{imageData.year}</p>
 						</div>
 					</div>
 					))}
@@ -182,10 +223,10 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 					<th className="px-6 py-3 text-left text-xs font-medium text-[#FFBF00] uppercase tracking-wider">
 						Stat
 					</th>
-					{athlete.stats && Array.isArray(athlete.stats) && athlete.stats.length > 0 ? (
-						athlete.stats.map((stat) => (
+					{sortedStats && Array.isArray(sortedStats) && sortedStats.length > 0 ? (
+						sortedStats.map((stat, index) => (
 							<th
-							key={stat?.year}
+							key={`${athlete?.id}-${stat?.year}-${index}`}
 							className="px-6 py-3 text-left text-xs font-medium text-[#FFBF00] uppercase tracking-wider"
 							>
 							{stat?.year || 'N/A'}
@@ -214,9 +255,9 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 					].map(([label, key]) => (
 					<tr key={key} className="hover:bg-[#FFBF00]/10">
 						<td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{label}</td>
-						{athlete.stats && Array.isArray(athlete.stats) && athlete.stats.length > 0 ? (
-							athlete.stats.map((stat) => (
-							<td key={stat?.year + key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+						{sortedStats && Array.isArray(sortedStats) && sortedStats.length > 0 ? (
+							sortedStats.map((stat, statIndex) => (
+							<td key={`${athlete?.id}-${stat?.year}-${key}-${statIndex}`} className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
 								{stat?.[key] || "-"}
 							</td>
 							))

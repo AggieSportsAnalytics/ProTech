@@ -8,6 +8,7 @@ import AddDataModal from "../components/AddDataModal";
 import NordBoard from "../components/NordBoard";
 import ForcePlate from "../components/ForcePlate";
 import AthleteComparisonChart from "../components/AthleteComparisonChart";
+import { formatNameFirstLast, sortByLastName } from "../utils/nameFormat";
 
 function Recruitment() {
 	const [selectedPosition, setSelectedPosition] = useState("");
@@ -44,21 +45,7 @@ function Recruitment() {
 		getAllPlayers();
 	}, []);
 
-	// Function to get last name from full name
-	const getLastName = (fullName) => {
-		if (!fullName) return "";
-		const parts = fullName.trim().split(/\s+/);
-		return parts.length > 1 ? parts[parts.length - 1] : parts[0];
-	};
-
-	// Function to sort by last name alphabetically
-	const sortByLastName = (arr) => {
-		return [...arr].sort((a, b) => {
-			const lastNameA = getLastName(a.name || "").toLowerCase();
-			const lastNameB = getLastName(b.name || "").toLowerCase();
-			return lastNameA.localeCompare(lastNameB);
-		});
-	};
+	// sortByLastName is now imported from utils/nameFormat
 
 	// Filter athletes by position only (search query only affects dropdown, not main view)
 	let filteredAthletes = athletes.filter((athlete) => {
@@ -184,7 +171,7 @@ function Recruitment() {
 															}}
 															className="w-full text-left px-4 py-2 hover:bg-[#FFBF00]/20 focus:bg-[#FFBF00]/20 focus:outline-none transition-colors border-b border-[#FFBF00]/10 last:border-b-0"
 														>
-															<div className="font-medium text-white">{athlete.name}</div>
+															<div className="font-medium text-white">{formatNameFirstLast(athlete.name)}</div>
 															<div className="text-sm text-[#FFBF00]">{athlete.position}</div>
 														</button>
 													))

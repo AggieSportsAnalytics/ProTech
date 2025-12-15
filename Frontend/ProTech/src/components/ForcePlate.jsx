@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import * as XLSX from "xlsx";
 import supabase from "../utils/supabase";
+import { formatNameFirstLast } from "../utils/nameFormat";
 import Loader from "./Loader";
 
 function ForcePlate({ id, onHasData }) {
@@ -769,7 +770,7 @@ function ForcePlate({ id, onHasData }) {
 		<>
 			<h1 className="text-2xl font-bold mb-8">
 				{forcePlateData?.length > 0 && (
-					<p>Force Plate Data for {forcePlateData[0].name}</p>
+					<p>Force Plate Data for {formatNameFirstLast(forcePlateData[0].name)}</p>
 				)}
 			</h1>
 
