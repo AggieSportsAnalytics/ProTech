@@ -91,6 +91,9 @@ function LoginPage() {
 								<br />
 								<span className="text-[#B4975A]">TECH</span>
 							</h1>
+							<p className="text-lg md:text-xl text-gray-600 mt-4 font-medium">
+								for UC Davis Football by Aggie Sports Analytics
+							</p>
 						</div>
 
 						<form onSubmit={handleSubmit} className="bg-white/90 border border-gray-100 shadow-xl rounded-2xl p-8 space-y-4">
