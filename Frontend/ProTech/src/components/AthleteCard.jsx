@@ -12,11 +12,11 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 			if (!athlete?.stats || !Array.isArray(athlete.stats)) {
 				return [];
 			}
-			// Sort years in ascending order (oldest first, newest last)
-			return athlete.stats
+			// Get unique years, then sort in ascending order (oldest first, newest last)
+			const uniqueYears = [...new Set(athlete.stats
 				.map((stat) => stat?.year)
-				.filter(Boolean)
-				.sort((a, b) => a - b);
+				.filter(Boolean))];
+			return uniqueYears.sort((a, b) => a - b);
 		},
 		[athlete],
 	);
@@ -79,8 +79,23 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 
 				let athleteFolder = null;
 				
-				if (nameError || !nameData) {
-					// Fallback: search for folder ending with UUID
+				// First, try to construct folder name from database
+				if (!nameError && nameData) {
+					const sanitizedName = nameData.name.replace(/[<>:"/\\|?*]/g, '-').trim();
+					const constructedFolder = `${sanitizedName}-${athlete.id}`;
+					
+					// Verify the folder exists by trying to list it
+					const { data: testFiles } = await supabase.storage
+						.from("athlete-images")
+						.list(constructedFolder, { limit: 1 });
+					
+					if (testFiles !== null) {
+						athleteFolder = constructedFolder;
+					}
+				}
+				
+				// Fallback: search for folder ending with UUID if constructed name didn't work
+				if (!athleteFolder) {
 					const { data: allFolders } = await supabase.storage
 						.from("athlete-images")
 						.list("", { limit: 1000 });
@@ -95,14 +110,9 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 							break;
 						}
 					}
-				} else {
-					// Construct folder name: "Player Name-UUID"
-					const sanitizedName = nameData.name.replace(/[<>:"/\\|?*]/g, '-').trim();
-					athleteFolder = `${sanitizedName}-${athlete.id}`;
 				}
 
 				if (!athleteFolder) {
-					console.log('No folder found for athlete:', athlete.id);
 					setImageUrls([]);
 					setImageLoading(false);
 					return;
@@ -117,26 +127,74 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 					});
 
 				if (error) {
-					console.log('Error listing images:', error);
 					setImageUrls([]);
 					setImageLoading(false);
 					return;
 				}
 
+				// Extract years from image filenames (e.g., "2025.jpg" -> 2025)
+				const yearsFromImages = new Set();
+				files?.forEach(file => {
+					const fileName = file.name.toLowerCase();
+					// Match patterns like "2025.jpg", "2025.jpeg", "2025.png", "2025_something.jpg"
+					const yearMatch = fileName.match(/^(\d{4})[._]/);
+					if (yearMatch) {
+						const year = parseInt(yearMatch[1], 10);
+						if (!isNaN(year)) {
+							yearsFromImages.add(year);
+						}
+					}
+				});
+
+				// Combine years from stats and years from image filenames
+				const allYears = new Set([...availableYears, ...yearsFromImages]);
+				const sortedAllYears = Array.from(allYears).sort((a, b) => a - b);
+
 				// Match files to years and build URLs
-				const imageResults = availableYears.map((year) => {
-					// Find matching file for this year
+				// Use a Set to track used files to prevent duplicates
+				const usedFiles = new Set();
+				const imageResults = sortedAllYears.map((year) => {
+					// Convert year to string for consistent matching
+					const yearStr = String(year);
+					
+					// Find matching file for this year - check multiple patterns
+					// Priority: exact match first, then patterns
 					const matchingFile = files?.find(file => {
+						// Skip if file already used
+						if (usedFiles.has(file.name)) {
+							return false;
+						}
+						
 						const fileName = file.name.toLowerCase();
-						return fileName.startsWith(`${year}.`) || fileName.startsWith(`${year}_`) || fileName === `${year}.jpg` || fileName === `${year}.jpeg`;
+						const yearLower = yearStr.toLowerCase();
+						
+						// Check exact matches first (highest priority)
+						if (fileName === `${yearLower}.jpg` ||
+						    fileName === `${yearLower}.jpeg` ||
+						    fileName === `${yearLower}.png`) {
+							return true;
+						}
+						
+						// Then check pattern matches
+						if (fileName.startsWith(`${yearLower}.`) ||
+						    fileName.startsWith(`${yearLower}_`)) {
+							return true;
+						}
+						
+						return false;
 					});
 
 					if (matchingFile) {
+						// Mark file as used to prevent duplicates
+						usedFiles.add(matchingFile.name);
+						
 						const { data: urlData } = supabase.storage
 							.from("athlete-images")
 							.getPublicUrl(`${athleteFolder}/${matchingFile.name}`);
+						
 						return { year, url: urlData.publicUrl };
 					}
+					
 					return { year, url: null };
 				});
 
@@ -147,7 +205,6 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 				
 				setImageUrls(validUrls);
 			} catch (error) {
-				console.error('Error fetching images:', error);
 				setImageUrls([]);
 			} finally {
 				setImageLoading(false);
