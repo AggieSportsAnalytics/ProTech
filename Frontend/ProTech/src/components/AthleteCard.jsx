@@ -61,7 +61,7 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 
 	useEffect(() => {
 		const getImages = async () => {
-			if (!athlete?.id || !availableYears || availableYears.length === 0) {
+			if (!athlete?.id) {
 				setImageUrls([]);
 				setImageLoading(false);
 				return;
@@ -147,7 +147,9 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 				});
 
 				// Combine years from stats and years from image filenames
-				const allYears = new Set([...availableYears, ...yearsFromImages]);
+				// Use availableYears if it exists, otherwise just use years from images
+				const statsYears = availableYears && availableYears.length > 0 ? availableYears : [];
+				const allYears = new Set([...statsYears, ...yearsFromImages]);
 				const sortedAllYears = Array.from(allYears).sort((a, b) => a - b);
 
 				// Match files to years and build URLs
