@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import supabase from "../utils/supabase";
 
 function LoginPage() {
 	const { user, signInWithEmail, signUpWithEmail, sendMagicLink } = useAuth();
@@ -8,13 +9,14 @@ function LoginPage() {
 	const [form, setForm] = useState({ email: "", password: "" });
 	const [message, setMessage] = useState("");
 	const [submitting, setSubmitting] = useState(false);
+	const [preventRedirect, setPreventRedirect] = useState(false);
 	const navigate = useNavigate();
 
 	useEffect(() => {
-		if (user) {
+		if (user && !preventRedirect) {
 			navigate("/recruitment", { replace: true });
 		}
-	}, [user, navigate]);
+	}, [user, navigate, preventRedirect]);
 
 	// Debug: Check Supabase connection on mount
 	useEffect(() => {
@@ -49,8 +51,89 @@ function LoginPage() {
 			}
 
 			if (mode === "signup") {
-				const { error } = await signUpWithEmail(form.email, form.password);
-				if (error) throw error;
+				// Set flag to prevent redirect while checking
+				setPreventRedirect(true);
+				
+				// First, try to sign in to check if account already exists
+				// This is the most reliable way to check without creating a new account
+				const { data: signInCheck, error: signInCheckError } = await supabase.auth.signInWithPassword({
+					email: form.email,
+					password: form.password
+				});
+				
+				// If sign in succeeds, the account already exists
+				if (signInCheck?.user && !signInCheckError) {
+					// Sign them out immediately - we were just checking
+					await supabase.auth.signOut();
+					setPreventRedirect(false);
+					setMessage("This email already has a registered account");
+					return;
+				}
+				
+				// If sign in failed, try to sign up
+				const { data: signUpData, error: signUpError } = await signUpWithEmail(form.email, form.password);
+				
+				if (signUpError) {
+					setPreventRedirect(false);
+					// Check if the error indicates the user already exists
+					const errorMsg = signUpError.message?.toLowerCase() || "";
+					const errorCode = signUpError.status || signUpError.code || "";
+					
+					// Check various error messages and codes that indicate user already exists
+					if (errorMsg.includes("already registered") ||
+					    errorMsg.includes("user already registered") ||
+					    errorMsg.includes("email already registered") ||
+					    errorMsg.includes("already exists") ||
+					    errorMsg.includes("duplicate") ||
+					    errorCode === "signup_disabled" ||
+					    errorCode === "user_already_exists") {
+						// Stay in signup mode and show message
+						setMessage("This email already has a registered account");
+						return;
+					}
+					throw signUpError;
+				}
+				
+				// Check if signup returned a user that's already confirmed (account exists)
+				// Supabase may return success even if user exists, but if email_confirmed_at is set, account exists
+				if (signUpData?.user) {
+					// If user is already confirmed, account exists
+					if (signUpData.user.email_confirmed_at) {
+						// Sign out immediately to prevent navigation
+						await supabase.auth.signOut();
+						setPreventRedirect(false);
+						setMessage("This email already has a registered account");
+						return;
+					}
+					
+					// If we got a session, it means the user was signed in (existing account)
+					if (signUpData.session) {
+						// Sign out immediately to prevent navigation
+						await supabase.auth.signOut();
+						setPreventRedirect(false);
+						setMessage("This email already has a registered account");
+						return;
+					}
+					
+					// Additional check: if user exists but no session and not confirmed,
+					// try to sign in to verify if account exists
+					// This handles the case where Supabase returns success for existing unconfirmed users
+					const { data: verifyData } = await supabase.auth.signInWithPassword({
+						email: form.email,
+						password: form.password
+					});
+					
+					if (verifyData?.user) {
+						// Account exists - sign out immediately
+						await supabase.auth.signOut();
+						setPreventRedirect(false);
+						setMessage("This email already has a registered account");
+						return;
+					}
+				}
+				
+				setPreventRedirect(false);
+				setPreventRedirect(false);
 				setMessage("Account created. Please confirm via email, then sign in.");
 			} else {
 				const { error } = await signInWithEmail(form.email, form.password);
@@ -67,6 +150,18 @@ function LoginPage() {
 				errorMessage = "Invalid email or password. Please try again.";
 			} else if (err.message?.includes("Email not confirmed")) {
 				errorMessage = "Please check your email and confirm your account before signing in.";
+			} else {
+				const errMsg = err.message?.toLowerCase() || "";
+				const errCode = err.status || err.code || "";
+				if (errMsg.includes("already registered") ||
+				    errMsg.includes("user already registered") ||
+				    errMsg.includes("email already registered") ||
+				    errMsg.includes("already exists") ||
+				    errMsg.includes("duplicate") ||
+				    errCode === "signup_disabled" ||
+				    errCode === "user_already_exists") {
+					errorMessage = "This email already has a registered account";
+				}
 			}
 			
 			setMessage(errorMessage);

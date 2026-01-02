@@ -122,11 +122,57 @@ function Recruitment() {
 									/>
 									{showSearchDropdown && searchQuery.trim() && (() => {
 										// Show all athletes matching search, regardless of position filter
+										const searchLower = searchQuery.toLowerCase().trim();
 										const searchMatches = sortByLastName(
-											athletes.filter((athlete) => 
-												athlete.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-												athlete.position?.toLowerCase().includes(searchQuery.toLowerCase())
-											)
+											athletes.filter((athlete) => {
+												// Check position match
+												if (athlete.position?.toLowerCase().includes(searchLower)) {
+													return true;
+												}
+												
+												// Check name in stored format (Last, First)
+												const storedName = athlete.name?.toLowerCase() || "";
+												if (storedName.includes(searchLower)) {
+													return true;
+												}
+												
+												// Check name in formatted format (First Last)
+												const formattedName = formatNameFirstLast(athlete.name || "").toLowerCase();
+												if (formattedName.includes(searchLower)) {
+													return true;
+												}
+												
+												// Check individual name parts (for partial matches with spaces)
+												const nameParts = formattedName.split(/\s+/).filter(part => part.length > 0);
+												const searchParts = searchLower.split(/\s+/).filter(part => part.length > 0);
+												
+												// If search has multiple parts (spaces), require strict ordered matching
+												if (searchParts.length > 1) {
+													// Each search part must match the beginning of the corresponding name part in order
+													// "jon j" should match "John Jones" (jon starts John, j starts Jones)
+													// But NOT "Jordan Jones" (jon doesn't start Jordan)
+													if (searchParts.length <= nameParts.length) {
+														// Check if search parts match in order (first part matches first name, second matches last name, etc.)
+														const matchesInOrder = searchParts.every((searchPart, index) => {
+															if (index < nameParts.length) {
+																return nameParts[index].startsWith(searchPart);
+															}
+															return false;
+														});
+														if (matchesInOrder) {
+															return true;
+														}
+													}
+												} else if (searchParts.length === 1) {
+													// Single word search - check if it matches the beginning of any name part
+													const singleSearch = searchParts[0];
+													if (nameParts.some(namePart => namePart.startsWith(singleSearch))) {
+														return true;
+													}
+												}
+												
+												return false;
+											})
 										);
 										
 										return (
