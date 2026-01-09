@@ -3,6 +3,7 @@ import "../index.css";
 import Loader from "../components/Loader";
 import supabase from "../utils/supabase";
 import RecruitmentModal from "../components/RecruitmentModal";
+import UploadCSV from "../components/UploadCSV";
 import AthleteCard from "../components/AthleteCard";
 import AddDataModal from "../components/AddDataModal";
 import NordBoard from "../components/NordBoard";
@@ -23,6 +24,7 @@ function Recruitment() {
 	const [showSearchDropdown, setShowSearchDropdown] = useState(false);
 	const [hasNordData, setHasNordData] = useState(false);
 	const [hasForcePlateData, setHasForcePlateData] = useState(false);
+	const [showUploadModal, setShowUploadModal] = useState(false);
 
 	useEffect(() => {
 		const getAllPlayers = async () => {
@@ -98,6 +100,13 @@ function Recruitment() {
 							</h1>
 						</div>
 						<div className="flex items-center space-x-4">
+							<button
+								onClick={() => setShowUploadModal(true)}
+								type="button"
+								className="bg-[#FFBF00] hover:bg-[#FFD700] text-[#022851] font-semibold px-4 py-2 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FFBF00]"
+							>
+								Upload Data
+							</button>
 							<div className="flex items-center space-x-4 mt-2 space-y-4">
 								{/* Search Dropdown */}
 								<div className="relative">
@@ -209,6 +218,24 @@ function Recruitment() {
 
 			{/* Main Content */}
 			<main className="max-w-7xl mx-auto pt-24 pb-16 px-8">
+				{showUploadModal && (
+					<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+						<div className="bg-[#022851] rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+							<div className="flex justify-between items-center p-6 border-b border-[#FFBF00]/20">
+								<h2 className="text-2xl font-bold text-[#FFBF00]">Upload CSV/Excel File</h2>
+								<button
+									onClick={() => setShowUploadModal(false)}
+									className="text-white hover:text-[#FFBF00] transition-colors text-2xl font-bold"
+								>
+									×
+								</button>
+							</div>
+							<div className="p-6">
+								<UploadCSV />
+							</div>
+						</div>
+					</div>
+				)}
 				{filteredAthletes.length > 0 ? (
 					<div className="relative">
 						{/* Navigation Controls */}
