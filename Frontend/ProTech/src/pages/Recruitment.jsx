@@ -222,7 +222,7 @@ function Recruitment() {
 					<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
 						<div className="bg-[#022851] rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
 							<div className="flex justify-between items-center p-6 border-b border-[#FFBF00]/20">
-								<h2 className="text-2xl font-bold text-[#FFBF00]">Upload CSV/Excel File</h2>
+								<h2 className="text-2xl font-bold text-[#FFBF00]">Upload Combine File</h2>
 								<button
 									onClick={() => setShowUploadModal(false)}
 									className="text-white hover:text-[#FFBF00] transition-colors text-2xl font-bold"
