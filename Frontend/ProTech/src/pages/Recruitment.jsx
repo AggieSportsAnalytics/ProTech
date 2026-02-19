@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import "../index.css";
 import Loader from "../components/Loader";
 import supabase from "../utils/supabase";
@@ -25,24 +26,49 @@ function Recruitment() {
 	const [hasForcePlateData, setHasForcePlateData] = useState(false);
 
 	useEffect(() => {
-		const getAllPlayers = async () => {
+		const getRoster = async () => {
 			setLoading(true);
-			const { data, error } = await supabase.from("Athlete_Data").select("*");
+			setError("");
 
-			if (error) {
-				console.error("Supabase error:", error);
-				setError(error.message);
-			} else if (data) {
-				setAthletes(data);
-			} else {
-				console.error("Error fetching names:", error);
+			// 1. Pull id from names where is_alumni is false (current roster only)
+			const { data: nameRows, error: errNames } = await supabase
+				.from("names")
+				.select("id")
+				.or("is_alumni.eq.false,is_alumni.is.null");
+
+			if (errNames) {
+				console.error("Supabase error (names):", errNames);
+				setError(errNames.message);
 				setAthletes([]);
+				setLoading(false);
+				return;
+			}
+
+			const ids = (nameRows || []).map((r) => r.id).filter(Boolean);
+			if (ids.length === 0) {
+				setAthletes([]);
+				setLoading(false);
+				return;
+			}
+
+			// 2. Use id to get all data for athlete card from Athlete_Data
+			const { data: athleteData, error: errData } = await supabase
+				.from("Athlete_Data")
+				.select("*")
+				.in("id", ids);
+
+			if (errData) {
+				console.error("Supabase error (Athlete_Data):", errData);
+				setError(errData.message);
+				setAthletes([]);
+			} else {
+				setAthletes(athleteData || []);
 			}
 
 			setLoading(false);
 		};
 
-		getAllPlayers();
+		getRoster();
 	}, []);
 
 	// sortByLastName is now imported from utils/nameFormat
@@ -97,8 +123,8 @@ function Recruitment() {
 								ProTech
 							</h1>
 						</div>
-						<div className="flex items-center space-x-4">
-							<div className="flex items-center space-x-4 mt-2 space-y-4">
+						<div className="flex items-center gap-4 flex-nowrap">
+							<div className="flex items-center gap-4 flex-nowrap flex-shrink-0">
 								{/* Search Dropdown */}
 								<div className="relative">
 									<input
@@ -118,7 +144,7 @@ function Recruitment() {
 											// Delay to allow click on dropdown item
 											setTimeout(() => setShowSearchDropdown(false), 200);
 										}}
-										className="px-4 py-2 bg-white border border-gray-300 text-[#022851] placeholder:text-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFBF00] focus:border-[#FFBF00] w-64"
+										className="h-[42px] box-border px-4 py-2 bg-white border border-gray-300 text-[#022851] placeholder:text-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFBF00] focus:border-[#FFBF00] w-64 flex-shrink-0"
 									/>
 									{showSearchDropdown && searchQuery.trim() && (() => {
 										// Show all athletes matching search, regardless of position filter
@@ -228,22 +254,29 @@ function Recruitment() {
 										);
 									})()}
 								</div>
-								<select
-									className="px-4 py-2 bg-white/10 border border-[#FFBF00]/30 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFBF00] focus:border-[#FFBF00] [&>option]:bg-[#022851] [&>option]:text-white"
-									value={selectedPosition}
-									onChange={(e) => setSelectedPosition(e.target.value)}
+								<div className="h-[42px] flex items-stretch flex-shrink-0">
+									<select
+										className="h-full min-w-[140px] box-border pl-4 pr-9 bg-white/10 border border-[#FFBF00]/30 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFBF00] focus:border-[#FFBF00] [&>option]:bg-[#022851] [&>option]:text-white appearance-none cursor-pointer bg-no-repeat bg-[length:12px_12px] bg-[right_12px_center]"
+										style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23FFBF00'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E\")" }}
+										value={selectedPosition}
+										onChange={(e) => setSelectedPosition(e.target.value)}
+									>
+										<option value="" className="bg-[#022851] text-white">All Positions</option>
+										{[...new Set(athletes.map(athlete => athlete.position))].map(position => (
+											<option key={position} value={position}>{position}</option>
+										))}
+									</select>
+								</div>
+								<Link
+									to="/alumni"
+									className="h-[42px] box-border px-4 py-2 bg-white/10 hover:bg-[#FFBF00]/20 border border-[#FFBF00]/30 text-white font-semibold rounded-lg transition-colors inline-flex items-center justify-center flex-shrink-0"
 								>
-									<option value="" className="bg-[#022851] text-white">All Positions</option>
-									{[...new Set(athletes.map(athlete => athlete.position))].map(position => (
-										<option key={position} value={position}>{position}</option>
-									))}
-								</select>
+									Alumni
+								</Link>
 								<button
 									onClick={() => setIsModalOpen(true)}
 									type="button"
-									className="bg-[#FFBF00] hover:bg-[#FFD700] text-[#022851] font-semibold rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FFBF00] flex items-center"
-									style={{ transform: "translateY(-10px)" }}   // ← move up 4px
-
+									className="h-[42px] w-[42px] box-border bg-[#FFBF00] hover:bg-[#FFD700] text-[#022851] font-semibold rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FFBF00] flex items-center justify-center flex-shrink-0"
 								>
 									<span className="text-sm">+</span>
 								</button>

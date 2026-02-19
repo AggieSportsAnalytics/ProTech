@@ -41,7 +41,7 @@ const relativeNormalize = (value, avg, maxRatio = 2) => {
 	return normalize(ratio, 0, maxRatio);
 };
 
-const AthleteComparisonChart = ({ id }) => {
+const AthleteComparisonChart = ({ id, dataTable = "Athlete_Data" }) => {
 	const [loading, setLoading] = useState(false);
 	const [mainAthlete, setMainAthlete] = useState({});
 	const [averages, setAverages] = useState({});
@@ -96,7 +96,7 @@ const AthleteComparisonChart = ({ id }) => {
 
 	const fetchAthleteProfile = async (athleteId) => {
 		const { data, error } = await supabase
-			.from("Athlete_Data")
+			.from(dataTable)
 			.select("*")
 			.eq("id", athleteId)
 			.single();
@@ -113,7 +113,7 @@ const AthleteComparisonChart = ({ id }) => {
 
 	const calcAverages = async (position) => {
 		const { data: athletes, error } = await supabase
-			.from("Athlete_Data")
+			.from(dataTable)
 			.select("stats")
 			.eq("position", position);
 
@@ -145,7 +145,7 @@ const AthleteComparisonChart = ({ id }) => {
 
 	const fetchComparisonOptions = async (position, excludeId) => {
 		const { data, error } = await supabase
-			.from("Athlete_Data")
+			.from(dataTable)
 			.select("id,name")
 			.eq("position", position);
 
@@ -186,7 +186,7 @@ const AthleteComparisonChart = ({ id }) => {
 			}
 		};
 		init();
-	}, [id]);
+	}, [id, dataTable]);
 
 	const labels = [
 		"Incline Bench",

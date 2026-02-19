@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Homepage from "./Homepage";
 import Recruitment from "./Recruitment";
+import Alumni from "./Alumni";
 import ProtectedRoute from "../components/ProtectedRoute";
 
 function App() {
@@ -13,6 +14,14 @@ function App() {
 					element={
 						<ProtectedRoute>
 							<Recruitment />
+						</ProtectedRoute>
+					}
+				/>
+				<Route
+					path="/alumni"
+					element={
+						<ProtectedRoute>
+							<Alumni />
 						</ProtectedRoute>
 					}
 				/>
