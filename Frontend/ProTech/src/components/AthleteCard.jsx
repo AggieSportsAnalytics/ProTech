@@ -132,12 +132,13 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 					return;
 				}
 
-				// Extract years from image filenames (e.g., "2025.jpg" -> 2025)
+				// Extract years from image filenames using first 4 digits only
+				// e.g. "2025.jpg", "2025 (1).jpg", "2025_something.jpg" -> 2025
 				const yearsFromImages = new Set();
 				files?.forEach(file => {
-					const fileName = file.name.toLowerCase();
-					// Match patterns like "2025.jpg", "2025.jpeg", "2025.png", "2025_something.jpg"
-					const yearMatch = fileName.match(/^(\d{4})[._]/);
+					const fileName = file.name;
+					// First 4 digits followed by non-digit or end of string (ignore " (1)" etc.)
+					const yearMatch = fileName.match(/^(\d{4})(?:\D|$)/);
 					if (yearMatch) {
 						const year = parseInt(yearMatch[1], 10);
 						if (!isNaN(year)) {
@@ -153,37 +154,21 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 				const sortedAllYears = Array.from(allYears).sort((a, b) => a - b);
 
 				// Match files to years and build URLs
-				// Use a Set to track used files to prevent duplicates
+				// Use first 4 digits of filename as year (e.g. "2025 (1).jpg" -> 2025)
 				const usedFiles = new Set();
 				const imageResults = sortedAllYears.map((year) => {
-					// Convert year to string for consistent matching
 					const yearStr = String(year);
 					
-					// Find matching file for this year - check multiple patterns
-					// Priority: exact match first, then patterns
 					const matchingFile = files?.find(file => {
-						// Skip if file already used
-						if (usedFiles.has(file.name)) {
-							return false;
-						}
+						if (usedFiles.has(file.name)) return false;
 						
-						const fileName = file.name.toLowerCase();
-						const yearLower = yearStr.toLowerCase();
+						const fileName = file.name;
+						// Extract year from filename: first 4 digits only (ignore " (1)", etc.)
+						const fileYearMatch = fileName.match(/^(\d{4})(?:\D|$)/);
+						if (!fileYearMatch) return false;
 						
-						// Check exact matches first (highest priority)
-						if (fileName === `${yearLower}.jpg` ||
-						    fileName === `${yearLower}.jpeg` ||
-						    fileName === `${yearLower}.png`) {
-							return true;
-						}
-						
-						// Then check pattern matches
-						if (fileName.startsWith(`${yearLower}.`) ||
-						    fileName.startsWith(`${yearLower}_`)) {
-							return true;
-						}
-						
-						return false;
+						const fileYear = parseInt(fileYearMatch[1], 10);
+						return fileYear === year;
 					});
 
 					if (matchingFile) {
