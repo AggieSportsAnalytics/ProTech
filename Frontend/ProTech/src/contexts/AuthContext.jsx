@@ -8,17 +8,6 @@ export function AuthProvider({ children }) {
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		// Clear any stale tokens from localStorage on mount
-		if (typeof window !== 'undefined') {
-			const keys = Object.keys(localStorage);
-			keys.forEach(key => {
-				if (key.includes('supabase') || key.includes('sb-')) {
-					localStorage.removeItem(key);
-				}
-			});
-			console.log("✓ Cleared cached Supabase tokens");
-		}
-
 		const {
 			data: { subscription },
 		} = supabase.auth.onAuthStateChange((_event, session) => {

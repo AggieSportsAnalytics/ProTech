@@ -21,26 +21,19 @@ if (!supabaseUrl || !supabaseKey) {
 
 // Create Supabase client with explicit error handling
 let supabase;
-try {
-	if (!supabaseUrl || !supabaseKey) {
-		throw new Error("Missing Supabase credentials");
-	}
-	
-	// Create a custom storage that doesn't persist (empty implementation)
-	const noStorage = {
-		getItem: () => null,
-		setItem: () => {},
-		removeItem: () => {}
-	};
-
-	supabase = createClient(supabaseUrl, supabaseKey, {
-		auth: {
-			autoRefreshToken: false, // Disable auto-refresh to prevent errors
-			persistSession: false,   // Don't persist session to avoid stale tokens
-			detectSessionInUrl: false, // Don't detect session in URL to avoid auto-login
-			storage: noStorage // Use empty storage to prevent token persistence
+	try {
+		if (!supabaseUrl || !supabaseKey) {
+			throw new Error("Missing Supabase credentials");
 		}
-	});
+
+		supabase = createClient(supabaseUrl, supabaseKey, {
+			auth: {
+				autoRefreshToken: true,
+				persistSession: true,
+				// Needed so magic-link / OAuth redirects can restore the session
+				detectSessionInUrl: true,
+			},
+		});
 	
 	console.log("✓ Supabase client initialized");
 } catch (error) {

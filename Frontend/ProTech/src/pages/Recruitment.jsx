@@ -17,7 +17,8 @@ function Recruitment() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [athletes, setAthletes] = useState([]);
 	const [currentIndex, setCurrentIndex] = useState(0);
-	const [loading, setLoading] = useState(false);
+	// Start true so first paint matches fetch-in-progress (avoids empty-state → Loader flash)
+	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [selectedType, setSelectedType] = useState(null);

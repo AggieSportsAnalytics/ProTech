@@ -18,27 +18,6 @@ function LoginPage() {
 		}
 	}, [user, navigate, preventRedirect]);
 
-	// Debug: Check Supabase connection on mount
-	useEffect(() => {
-		console.log("=== HOMEPAGE MOUNTED ===");
-		const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-		const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-		console.log("Homepage - URL:", supabaseUrl ? "✓ Set" : "✗ Missing");
-		console.log("Homepage - Key:", supabaseKey ? "✓ Set" : "✗ Missing");
-		
-		// Clear any stale Supabase tokens from localStorage
-		if (typeof window !== 'undefined') {
-			const keys = Object.keys(localStorage);
-			keys.forEach(key => {
-				if (key.includes('supabase') || key.includes('sb-')) {
-					console.log("Clearing cached token:", key);
-					localStorage.removeItem(key);
-				}
-			});
-			console.log("✓ Cleared cached Supabase tokens");
-		}
-	}, []);
-
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		setSubmitting(true);
