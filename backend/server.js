@@ -11,7 +11,17 @@ loadEnv();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+const corsOrigins = [
+	process.env.FRONTEND_URL,
+	"http://localhost:5173",
+	"http://127.0.0.1:5173",
+].filter(Boolean);
+
+app.use(
+	cors({
+		origin: corsOrigins.length > 0 ? corsOrigins : true,
+	}),
+);
 app.use(express.json({ limit: "2mb" }));
 app.use(fileUpload());
 
@@ -99,6 +109,6 @@ app.post("/upload", async (req, res) => {
 	}
 });
 
-app.listen(PORT, () => {
-	console.log(`Server running on http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+	console.log(`Server running on port ${PORT}`);
 });

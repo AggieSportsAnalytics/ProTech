@@ -1,0 +1,12 @@
+# Optional Render Blueprint — you can also configure these in the Render dashboard.
+services:
+  - type: web
+    name: protech-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
