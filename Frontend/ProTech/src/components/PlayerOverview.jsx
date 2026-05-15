@@ -7,6 +7,25 @@ import Loader from "./Loader";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
+function formatNoDataOverview(built) {
+	const name = built.firstName || built.name || "This athlete";
+	const testingNote =
+		built.insightSections?.testingNotes?.[0] ||
+		`${name} has no performance testing data on file yet.`;
+
+	return `## ${name}'s Biggest Improvements
+
+${name} has no combine or in-season test results on file yet, so there are no improvements to report.
+
+## ${name}'s Areas to Watch
+
+${name} has no performance trends on file yet, so there are no declines or stagnations to report.
+
+## ${name}'s Testing Notes
+
+${testingNote}`;
+}
+
 function renderOverviewMarkdown(text) {
 	if (!text) return null;
 	return text.split("\n").map((line, i) => {
@@ -42,7 +61,6 @@ function PlayerOverview({ athleteId, dataTable = "Athlete_Data", autoGenerate = 
 	const [error, setError] = useState("");
 	const [analytics, setAnalytics] = useState(null);
 	const [contextHash, setContextHash] = useState(null);
-	const [hasData, setHasData] = useState(false);
 	const runIdRef = useRef(0);
 
 	const loadAnalytics = useCallback(async () => {
@@ -51,10 +69,7 @@ function PlayerOverview({ athleteId, dataTable = "Athlete_Data", autoGenerate = 
 		if (!context) return null;
 		const built = buildPlayerAnalytics(context);
 		const hash = await hashAnalytics(built);
-		const combineYears = built.combine?.yearsTested?.length || 0;
-		const nordSessions = built.nordBoard?.sessionCount || 0;
-		const fpSessions = built.forcePlate?.sessionCount || 0;
-		const dataAvailable = combineYears > 0 || nordSessions > 0 || fpSessions > 0;
+		const dataAvailable = built.dataGaps?.hasAnyPerformanceData ?? false;
 		return { built, hash, dataAvailable };
 	}, [athleteId, dataTable]);
 
@@ -135,17 +150,15 @@ function PlayerOverview({ athleteId, dataTable = "Athlete_Data", autoGenerate = 
 				const result = await loadAnalytics();
 				if (cancelled || runId !== runIdRef.current) return;
 
-				if (!result) {
-					setHasData(false);
-					return;
-				}
+				if (!result) return;
 
 				const { built, hash, dataAvailable } = result;
 				setAnalytics(built);
 				setContextHash(hash);
-				setHasData(dataAvailable);
-
-				if (!dataAvailable) return;
+				if (!dataAvailable) {
+					setOverview(formatNoDataOverview(built));
+					return;
+				}
 
 				const hit = await tryLoadFromSupabase(hash);
 				if (cancelled || runId !== runIdRef.current) return;
@@ -175,14 +188,6 @@ function PlayerOverview({ athleteId, dataTable = "Athlete_Data", autoGenerate = 
 			<div className="flex justify-center py-12">
 				<Loader />
 			</div>
-		);
-	}
-
-	if (!hasData) {
-		return (
-			<p className="text-gray-500 text-center py-6">
-				Not enough performance data yet to generate an overview.
-			</p>
 		);
 	}
 

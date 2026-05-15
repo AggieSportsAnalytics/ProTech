@@ -90,17 +90,58 @@ export function findCalendarGaps(dates) {
 	return gaps;
 }
 
+/** Count how much combine data exists (ignoring empty year shells). */
+export function summarizeCombineCoverage(stats) {
+	const yearly = dedupeStatsByYear(stats);
+	let metricCount = 0;
+	const yearsWithData = new Set();
+
+	for (const entry of yearly) {
+		for (const metric of COMBINE_METRICS) {
+			const val = parseMetricValue(entry[metric.key], metric);
+			if (val != null) {
+				metricCount += 1;
+				yearsWithData.add(entry.year);
+			}
+		}
+	}
+
+	return {
+		hasCombineData: metricCount > 0,
+		metricCount,
+		yearsOnRecord: yearly.map((e) => e.year),
+		yearsWithData: [...yearsWithData],
+	};
+}
+
 /**
  * Combine gap: movement tested in only one year (or never) while missing 2+ years
  * on the athlete's record. Notable if more than 3 movements qualify.
  */
 export function analyzeCombineDataGaps(stats) {
+	const coverage = summarizeCombineCoverage(stats);
 	const yearly = dedupeStatsByYear(stats);
-	const combineYearsOnRecord = yearly.map((e) => e.year);
+	const combineYearsOnRecord = coverage.yearsOnRecord;
 	const sparseMetrics = [];
 
+	if (!coverage.hasCombineData) {
+		return {
+			notable: false,
+			sparseMetrics,
+			combineYearsOnRecord,
+			hasCombineData: false,
+			reason: "no_combine_metrics",
+		};
+	}
+
 	if (combineYearsOnRecord.length < 3) {
-		return { notable: false, sparseMetrics, combineYearsOnRecord, reason: "fewer_than_3_years" };
+		return {
+			notable: false,
+			sparseMetrics,
+			combineYearsOnRecord,
+			hasCombineData: true,
+			reason: "fewer_than_3_years",
+		};
 	}
 
 	for (const metric of COMBINE_METRICS) {
@@ -129,6 +170,8 @@ export function analyzeCombineDataGaps(stats) {
 		notable: sparseMetrics.length > 3,
 		sparseMetrics,
 		combineYearsOnRecord,
+		hasCombineData: true,
+		reason: sparseMetrics.length > 3 ? "sparse_multi_year" : "ok",
 	};
 }
 
@@ -359,8 +402,37 @@ export function calcPositionAverages(athletesStats, position) {
 		}
 	}
 
-	return { position, averages, peerCount: peers.length };
+	return {
+		position,
+		averages,
+		peerCount: peers.length,
+		hasComparisonGroup: peers.length >= 2,
+	};
 }
+
+const COMPARE_EPS = 0.01; 
+
+function isMeaningfullyBetter(playerVal, avg, higherIsBetter) {
+	if (higherIsBetter) return playerVal > avg + COMPARE_EPS;
+	return playerVal < avg - COMPARE_EPS;
+}
+
+function isMeaningfullyWorse(playerVal, avg, higherIsBetter) {
+	if (higherIsBetter) return playerVal < avg - COMPARE_EPS;
+	return playerVal > avg + COMPARE_EPS;
+}
+
+const STAGNATION_REASONS = [
+	"which may suggest a training plateau in that quality.",
+	"which may indicate progress has stalled in this area.",
+	"which could mean this metric needs a fresh training emphasis.",
+];
+
+const GROUP_WATCH_SUMMARY =
+	"Taken together, these gaps relative to the position group are worth monitoring in the training plan.";
+
+const GROUP_STRENGTH_SUMMARY =
+	"These numbers stand out positively against the position group.";
 
 function firstNameFrom(fullName) {
 	if (!fullName) return "The athlete";
@@ -369,14 +441,33 @@ function firstNameFrom(fullName) {
 }
 
 function buildDataGaps(stats, nordBoard, forcePlate) {
+	const combineCoverage = summarizeCombineCoverage(stats);
 	const combine = analyzeCombineDataGaps(stats);
 	const nordGaps = nordBoard?.calendarGaps || [];
 	const fpGaps = forcePlate?.calendarGaps || [];
+	const hasNord = (nordBoard?.sessionCount || 0) > 0;
+	const hasForcePlate = (forcePlate?.sessionCount || 0) > 0;
+	const hasCombine = combineCoverage.hasCombineData;
+	const hasAnyPerformanceData = hasCombine || hasNord || hasForcePlate;
+
+	let coverageStatus = "none";
+	if (!hasAnyPerformanceData) {
+		coverageStatus = "no_data";
+	} else if (!hasCombine) {
+		coverageStatus = "in_season_only";
+	} else if (combine.notable || nordGaps.length > 0 || fpGaps.length > 0) {
+		coverageStatus = "has_gaps";
+	} else {
+		coverageStatus = "complete";
+	}
 
 	return {
-		combine,
-		nordBoard: { notable: nordGaps.length > 0, gaps: nordGaps },
-		forcePlate: { notable: fpGaps.length > 0, gaps: fpGaps },
+		combine: { ...combine, ...combineCoverage },
+		nordBoard: { notable: nordGaps.length > 0, gaps: nordGaps, hasData: hasNord },
+		forcePlate: { notable: fpGaps.length > 0, gaps: fpGaps, hasData: hasForcePlate },
+		hasCombineData: hasCombine,
+		hasAnyPerformanceData,
+		coverageStatus,
 		anyNotable:
 			combine.notable || nordGaps.length > 0 || fpGaps.length > 0,
 	};
@@ -389,13 +480,23 @@ function buildInsights({ name, combine, nordBoard, forcePlate, positionCompariso
 	const testingNotes = [];
 	const latest = getLatestStats(profile?.stats || []);
 
-	if (dataGaps?.combine?.notable) {
+	if (!dataGaps?.hasAnyPerformanceData) {
+		testingNotes.push(
+			`${firstName} has no combine, NordBord, or force plate results on file. Performance metrics are empty — there is nothing to compare year-over-year yet.`,
+		);
+	} else if (!dataGaps?.hasCombineData) {
+		testingNotes.push(
+			`${firstName} has no combine metrics on file (body weight, jumps, lifts, and speed tests are all blank). Any overview is limited to in-season NordBord or force plate data only.`,
+		);
+	}
+
+	if (dataGaps?.hasCombineData && dataGaps?.combine?.notable) {
 		const labels = dataGaps.combine.sparseMetrics.map((m) => m.metric).join(", ");
 		const years = dataGaps.combine.combineYearsOnRecord.join(", ");
 		testingNotes.push(
 			`${firstName} has a notable gap in combine data: more than 3 movements (${labels}) have results in only one year (or none) on record across ${years}, while missing at least two other years for each.`,
 		);
-	} else if (dataGaps?.combine?.sparseMetrics?.length > 0) {
+	} else if (dataGaps?.hasCombineData && dataGaps?.combine?.sparseMetrics?.length > 0) {
 		const labels = dataGaps.combine.sparseMetrics.map((m) => m.metric).join(", ");
 		testingNotes.push(
 			`${firstName} has incomplete combine data for ${labels} (only one year or untested across multiple years on record), but this does not meet the threshold for a notable combine gap.`,
@@ -414,16 +515,19 @@ function buildInsights({ name, combine, nordBoard, forcePlate, positionCompariso
 		);
 	}
 
-	if (!dataGaps?.anyNotable && (dataGaps?.combine?.combineYearsOnRecord?.length || 0) >= 2) {
+	if (dataGaps?.coverageStatus === "complete") {
 		testingNotes.push(
-			`${firstName}'s combine and in-season testing coverage is reasonably complete with no notable calendar or multi-year gaps detected.`,
+			`${firstName}'s combine and in-season testing coverage looks reasonably complete with no notable calendar or multi-year gaps detected.`,
 		);
 	}
 
+	let stagnationIdx = 0;
 	for (const s of combine?.stagnant || []) {
 		const yr = s.years?.join(" and ");
+		const reason = STAGNATION_REASONS[stagnationIdx % STAGNATION_REASONS.length];
+		stagnationIdx += 1;
 		areasToWatch.push(
-			`${firstName}'s ${s.label} stagnated between ${yr}, holding at ${s.value}, which may suggest a training plateau in that quality.`,
+			`${firstName}'s ${s.label} stagnated between ${yr}, holding at ${s.value}, ${reason}`,
 		);
 	}
 
@@ -441,25 +545,45 @@ function buildInsights({ name, combine, nordBoard, forcePlate, positionCompariso
 		}
 	}
 
-	if (positionComparison?.averages) {
+	if (positionComparison?.hasComparisonGroup && positionComparison?.averages) {
+		const worse = [];
+		const better = [];
+
 		for (const metric of COMBINE_METRICS) {
 			if (metric.higherIsBetter == null) continue;
 			const playerVal = parseMetricValue(latest[metric.key], metric);
 			const avg = positionComparison.averages[metric.key];
 			if (playerVal == null || avg == null) continue;
 
-			const fasterOrHigher = metric.higherIsBetter ? playerVal > avg : playerVal < avg;
-			if (!fasterOrHigher) {
-				const comparison = metric.higherIsBetter ? "below" : "slower than";
-				areasToWatch.push(
-					`${firstName}'s latest ${metric.label} is ${formatMetricValue(playerVal, metric.unit)}, ${comparison} the position average of ${formatMetricValue(avg, metric.unit)}, which may limit on-field explosiveness or speed.`,
-				);
-			} else {
-				const comparison = metric.higherIsBetter ? "above" : "faster than";
-				improvements.push(
-					`${firstName}'s latest ${metric.label} is ${formatMetricValue(playerVal, metric.unit)}, ${comparison} the position average of ${formatMetricValue(avg, metric.unit)}.`,
-				);
+			const entry = {
+				label: metric.label,
+				player: formatMetricValue(playerVal, metric.unit),
+				avg: formatMetricValue(avg, metric.unit),
+			};
+
+			if (isMeaningfullyWorse(playerVal, avg, metric.higherIsBetter)) {
+				worse.push(entry);
+			} else if (isMeaningfullyBetter(playerVal, avg, metric.higherIsBetter)) {
+				better.push(entry);
 			}
+		}
+
+		if (worse.length > 0) {
+			const detail = worse
+				.map((w) => `${w.label} (${w.player} vs group avg ${w.avg})`)
+				.join("; ");
+			areasToWatch.push(
+				`${firstName} is below the ${positionComparison.position} group average in ${worse.length} test${worse.length > 1 ? "s" : ""}: ${detail}. ${GROUP_WATCH_SUMMARY}`,
+			);
+		}
+
+		if (better.length > 0) {
+			const detail = better
+				.map((w) => `${w.label} (${w.player} vs group avg ${w.avg})`)
+				.join("; ");
+			improvements.push(
+				`${firstName} is above the ${positionComparison.position} group average in ${better.length} test${better.length > 1 ? "s" : ""}: ${detail}. ${GROUP_STRENGTH_SUMMARY}`,
+			);
 		}
 	}
 
@@ -529,12 +653,14 @@ export function buildPlayerAnalytics(context) {
 	const combine = analyzeCombineTrends(context.profile?.stats);
 	const nord = analyzeNordBoard(context.nordBoard);
 	const forcePlate = analyzeForcePlate(context.forcePlateBaseline, context.forcePlateWeekly);
-	const positionComparison = context.positionAverages
+	const positionComparisonRaw = context.positionAverages
 		? calcPositionAverages(
 				context.positionPeersStats || [],
 				context.profile?.position,
 			)
 		: null;
+	const positionComparison =
+		positionComparisonRaw?.hasComparisonGroup ? positionComparisonRaw : null;
 
 	const dataGaps = buildDataGaps(context.profile?.stats, nord, forcePlate);
 

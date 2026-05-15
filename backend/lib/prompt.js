@@ -76,7 +76,8 @@ SECTION RULES (do not mix content across sections):
 ## Areas to Watch
 - Use ONLY "FOR AREAS TO WATCH" bullets below.
 - ONLY stagnations, regressions, or declines in tested metrics (combine, NordBord, force plate).
-- Include simple reasoning on what it could mean.
+- Include simple reasoning on what it could mean, but vary your wording — do not repeat the same closing phrase in every sentence.
+- If position group comparisons are omitted (only one athlete at that position), do not invent peer comparisons.
 - Do NOT mention missing data, untested years, calendar gaps, or "notable gaps" here — those belong in Testing Notes only.
 - If there are no stagnations or declines, write one short sentence that ${displayName} has no major performance declines on record.
 
@@ -84,8 +85,11 @@ SECTION RULES (do not mix content across sections):
 - Use ONLY "FOR TESTING NOTES" bullets and the DATA GAPS JSON.
 - ONLY data coverage: missing combine years, untested movements, NordBord/force plate gaps over 3 weeks.
 - Do NOT repeat stagnations or performance declines here.
-- If dataGaps.anyNotable is true, describe those gaps — never say testing is complete or consistent.
-- If dataGaps.anyNotable is false, you may note coverage is reasonably complete.
+- If dataGaps.coverageStatus is "no_data", state clearly that there are no performance results on file — do NOT say testing is complete, consistent, or that there are no notable gaps.
+- If dataGaps.coverageStatus is "in_season_only", state that combine metrics are missing and only NordBord/force plate data exists.
+- If dataGaps.coverageStatus is "has_gaps", describe the gaps from DATA GAPS and FOR TESTING NOTES bullets.
+- If dataGaps.coverageStatus is "complete", you may note coverage is reasonably complete.
+- NEVER say "no notable gaps" when dataGaps.hasAnyPerformanceData is false.
 
 DATA GAP RULES (Testing Notes only):
 - Combine notable gap: more than 3 movements with only one year (or none) of data while missing 2+ other years on record.
@@ -134,9 +138,10 @@ ${JSON.stringify(
 			? {
 					position: positionComparison.position,
 					peerCount: positionComparison.peerCount,
+					hasComparisonGroup: positionComparison.hasComparisonGroup,
 					averages: positionComparison.averages,
 				}
-			: null,
+			: { peerCount: 0, hasComparisonGroup: false, note: "No position peer group — skip comparisons" },
 	},
 	null,
 	2,

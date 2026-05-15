@@ -269,7 +269,7 @@ function Alumni() {
 						{filteredAthletes[currentIndex]?.id && (
 							<div className="mt-12 space-y-8">
 								<div className="mb-8">
-									<h2 className="text-xl font-semibold text-white mb-4">AI Player Overview</h2>
+									<h2 className="text-xl font-semibold text-white mb-4">Player Overview</h2>
 									<div className="bg-white rounded-lg shadow-lg p-6">
 										<PlayerOverview athleteId={filteredAthletes[currentIndex].id} />
 									</div>
