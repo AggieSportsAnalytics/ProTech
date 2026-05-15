@@ -10,6 +10,7 @@ import AddDataModal from "../components/AddDataModal";
 import NordBoard from "../components/NordBoard";
 import ForcePlate from "../components/ForcePlate";
 import AthleteComparisonChart from "../components/AthleteComparisonChart";
+import PlayerOverview from "../components/PlayerOverview";
 import { formatNameFirstLast, sortByLastName } from "../utils/nameFormat";
 
 function Recruitment() {
@@ -355,6 +356,14 @@ function Recruitment() {
 						{/* Data Visualizations */}
 						{filteredAthletes[currentIndex]?.id && (
 							<div className="mt-12 space-y-8">
+								{/* AI Player Overview */}
+								<div className="mb-8">
+									<h2 className="text-xl font-semibold text-white mb-4">AI Player Overview</h2>
+									<div className="bg-white rounded-lg shadow-lg p-6">
+										<PlayerOverview athleteId={filteredAthletes[currentIndex].id} />
+									</div>
+								</div>
+
 								{/* Performance Overview */}
 								<div className="mb-8">
 									<h2 className="text-xl font-semibold text-white mb-4">Performance Overview</h2>

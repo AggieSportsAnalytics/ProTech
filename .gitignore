@@ -7,3 +7,10 @@
 .env.test.local
 .env.production.local
 .env*.local
+node_modules/
+# Build output
+dist/
+Frontend/ProTech/dist/
+# Logs
+*.log
+npm-debug.log*
