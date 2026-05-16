@@ -75,4 +75,8 @@ async function saveCachedOverview(athleteId, contextHash, overview, model) {
 	}
 }
 
-module.exports = { getCachedOverview, saveCachedOverview };
+module.exports = {
+	getSupabase,
+	getCachedOverview,
+	saveCachedOverview,
+};

@@ -4,7 +4,12 @@ const cors = require("cors");
 const xlsx = require("xlsx");
 const { loadEnv } = require("./lib/loadEnv");
 const { generateOverview } = require("./lib/generateOverview");
-const { getCachedOverview, saveCachedOverview } = require("./lib/supabase");
+const { getSupabase, getCachedOverview, saveCachedOverview } = require("./lib/supabase");
+const {
+	processAthletePhotoUpload,
+	isValidUuid,
+	parseYear,
+} = require("./lib/uploadAthletePhoto");
 
 loadEnv();
 
@@ -23,7 +28,12 @@ app.use(
 	}),
 );
 app.use(express.json({ limit: "2mb" }));
-app.use(fileUpload());
+app.use(
+	fileUpload({
+		limits: { fileSize: 25 * 1024 * 1024 },
+		abortOnLimit: true,
+	}),
+);
 
 app.get("/api/health", (_req, res) => {
 	res.json({ ok: true });
@@ -78,6 +88,66 @@ app.post("/api/player-overview", async (req, res) => {
 	} catch (err) {
 		console.error("player-overview error:", err);
 		res.status(500).json({ message: err.message || "Failed to generate overview" });
+	}
+});
+
+/**
+ * Upload uncropped athlete photo: server crops with pose model, stores {year}.jpg,
+ * archives previous file to old{year}.jpg when present.
+ */
+app.post("/api/athlete-photo", async (req, res) => {
+	try {
+		const file = req.files?.photo;
+		const athleteId = req.body?.athleteId;
+		const year = parseYear(req.body?.year);
+
+		if (!file) {
+			return res.status(400).json({ message: "No photo uploaded (field name: photo)" });
+		}
+		if (!athleteId) {
+			return res.status(400).json({ message: "athleteId is required" });
+		}
+		if (!isValidUuid(athleteId)) {
+			return res.status(400).json({ message: "Invalid athleteId" });
+		}
+		if (year == null) {
+			return res.status(400).json({ message: "year must be a number between 2000 and 2100" });
+		}
+
+		const supabase = getSupabase();
+		if (!supabase) {
+			return res.status(503).json({
+				message:
+					"Server is not configured for storage (set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY).",
+			});
+		}
+
+		try {
+			await processAthletePhotoUpload(supabase, athleteId, year, file.data);
+		} catch (err) {
+			if (err.code === "CROP_NO_POSE" || err.code === "CROP_INSUFFICIENT_KEYPOINTS") {
+				return res.status(422).json({
+					message:
+						"We couldn't find a full person in this image. Try a clearer full-body photo.",
+				});
+			}
+			if (err.code === "CROP_BAD_IMAGE") {
+				return res.status(400).json({ message: err.message || "Invalid image file" });
+			}
+			if (err.code === "PLAYER_NOT_FOUND" || err.status === 404) {
+				return res.status(404).json({ message: "Player not found" });
+			}
+			if (err.code === "STORAGE_ARCHIVE_FAILED" || err.code === "STORAGE_UPLOAD_FAILED") {
+				console.error("athlete-photo storage:", err);
+				return res.status(500).json({ message: err.message || "Storage error" });
+			}
+			throw err;
+		}
+
+		return res.json({ ok: true, year });
+	} catch (err) {
+		console.error("athlete-photo error:", err);
+		return res.status(500).json({ message: err.message || "Failed to process photo" });
 	}
 });
 

@@ -9,13 +9,18 @@
   },
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "crop-preview": "node scripts/crop-preview.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
+    "@tensorflow-models/pose-detection": "^2.1.3",
+    "@tensorflow/tfjs-node": "^4.22.0",
+    "canvas": "^3.2.3",
     "cors": "^2.8.5",
     "express": "^4.22.1",
     "express-fileupload": "^1.5.2",
+    "sharp": "^0.34.5",
     "ws": "^8.20.1",
     "xlsx": "^0.18.5"
   }

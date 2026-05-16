@@ -1,6 +1,33 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import supabase from "../utils/supabase";
 import { formatNameFirstLast } from "../utils/nameFormat";
+
+const API_BASE = import.meta.env.VITE_API_URL || "";
+
+/** Archived replaces; do not use as the primary image for a year. */
+function isArchivePhotoName(fileName) {
+	return /^old\d{4}/i.test(fileName);
+}
+
+/** Coerce DB/UI year (number or string) to an integer so Set/Map dedupe works. */
+function normalizeYear(y) {
+	if (y == null || y === "") return null;
+	const n = typeof y === "number" && Number.isFinite(y) ? Math.trunc(y) : parseInt(String(y).trim(), 10);
+	return Number.isFinite(n) && !Number.isNaN(n) ? n : null;
+}
+
+/** Prefer `{year}.jpg` over loose first-4-digits match; never pick `old{year}.jpg` for display. */
+function pickFileForYear(files, year) {
+	if (!files?.length) return null;
+	const exact = `${year}.jpg`;
+	const canonical = files.find((f) => f.name === exact);
+	if (canonical) return canonical;
+	return files.find((f) => {
+		if (isArchivePhotoName(f.name)) return false;
+		const m = f.name.match(/^(\d{4})(?:\D|$)/);
+		return m && parseInt(m[1], 10) === year;
+	});
+}
 
 function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) {
 	if (!athlete) {
@@ -12,10 +39,14 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 			if (!athlete?.stats || !Array.isArray(athlete.stats)) {
 				return [];
 			}
-			// Get unique years, then sort in ascending order (oldest first, newest last)
-			const uniqueYears = [...new Set(athlete.stats
-				.map((stat) => stat?.year)
-				.filter(Boolean))];
+			// Get unique years (normalize so 2024 and "2024" are one year), oldest first
+			const uniqueYears = [
+				...new Set(
+					athlete.stats
+						.map((stat) => normalizeYear(stat?.year))
+						.filter((y) => y != null),
+				),
+			];
 			return uniqueYears.sort((a, b) => a - b);
 		},
 		[athlete],
@@ -30,19 +61,20 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 			const statsByYear = new Map();
 			
 			athlete.stats.forEach((stat) => {
-				if (!stat?.year) return;
-				const year = stat.year;
+				const year = normalizeYear(stat?.year);
+				if (year == null) return;
 				const existing = statsByYear.get(year);
+				const row = { ...stat, year };
 				
 				// If no existing entry for this year, or if this stat has more data, use it
 				if (!existing) {
-					statsByYear.set(year, stat);
+					statsByYear.set(year, row);
 				} else {
 					// Keep the one with more non-null values, or prefer the existing one
 					const existingNonNull = Object.values(existing).filter(v => v !== null && v !== undefined).length;
-					const currentNonNull = Object.values(stat).filter(v => v !== null && v !== undefined).length;
+					const currentNonNull = Object.values(row).filter(v => v !== null && v !== undefined).length;
 					if (currentNonNull > existingNonNull) {
-						statsByYear.set(year, stat);
+						statsByYear.set(year, row);
 					}
 				}
 			});
@@ -58,6 +90,46 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 	);
 	const [imageUrls, setImageUrls] = useState([]);
 	const [imageLoading, setImageLoading] = useState(false);
+	const [uploadYear, setUploadYear] = useState(() => new Date().getFullYear());
+	const [uploadBusy, setUploadBusy] = useState(false);
+	const [imageRefreshKey, setImageRefreshKey] = useState(0);
+	const [uploadOpen, setUploadOpen] = useState(false);
+	const uploadPopoverRef = useRef(null);
+
+	const handlePhotoUpload = async (e) => {
+		e.preventDefault();
+		const input = e.target.elements.photo;
+		const file = input?.files?.[0];
+		if (!file) {
+			window.alert("Choose an image file.");
+			return;
+		}
+		setUploadBusy(true);
+		const formData = new FormData();
+		formData.append("photo", file);
+		formData.append("athleteId", athlete.id);
+		formData.append("year", String(uploadYear));
+		try {
+			const res = await fetch(`${API_BASE}/api/athlete-photo`, {
+				method: "POST",
+				body: formData,
+			});
+			const data = await res.json().catch(() => ({}));
+			if (!res.ok) {
+				window.alert(data.message || "Upload failed");
+				return;
+			}
+			window.alert("Photo uploaded successfully.");
+			setImageRefreshKey((k) => k + 1);
+			e.target.reset();
+			setUploadOpen(false);
+		} catch (err) {
+			console.error(err);
+			window.alert(err.message || "Upload failed");
+		} finally {
+			setUploadBusy(false);
+		}
+	};
 
 	useEffect(() => {
 		const getImages = async () => {
@@ -81,20 +153,10 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 				
 				// First, try to construct folder name from database
 				if (!nameError && nameData) {
-					const sanitizedName = nameData.name.replace(/[<>:"/\\|?*]/g, '-').trim();
-					const constructedFolder = `${sanitizedName}-${athlete.id}`;
-					
-					// Verify the folder exists by trying to list it
-					const { data: testFiles } = await supabase.storage
-						.from("athlete-images")
-						.list(constructedFolder, { limit: 1 });
-					
-					if (testFiles !== null) {
-						athleteFolder = constructedFolder;
-					}
+					const sanitizedName = nameData.name.replace(/[<>:"/\\|?*]/g, "-").trim();
+					athleteFolder = `${sanitizedName}-${athlete.id}`;
 				}
-				
-				// Fallback: search for folder ending with UUID if constructed name didn't work
+
 				if (!athleteFolder) {
 					const { data: allFolders } = await supabase.storage
 						.from("athlete-images")
@@ -104,8 +166,11 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 						const { data: folderContents } = await supabase.storage
 							.from("athlete-images")
 							.list(item.name, { limit: 1 });
-						
-						if (folderContents !== null && (item.name.endsWith(`-${athlete.id}`) || item.name === athlete.id)) {
+
+						if (
+							folderContents !== null &&
+							(item.name.endsWith(`-${athlete.id}`) || item.name === athlete.id)
+						) {
 							athleteFolder = item.name;
 							break;
 						}
@@ -135,14 +200,14 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 				// Extract years from image filenames using first 4 digits only
 				// e.g. "2025.jpg", "2025 (1).jpg", "2025_something.jpg" -> 2025
 				const yearsFromImages = new Set();
-				files?.forEach(file => {
+				files?.forEach((file) => {
+					if (isArchivePhotoName(file.name)) return;
 					const fileName = file.name;
-					// First 4 digits followed by non-digit or end of string (ignore " (1)" etc.)
 					const yearMatch = fileName.match(/^(\d{4})(?:\D|$)/);
 					if (yearMatch) {
-						const year = parseInt(yearMatch[1], 10);
-						if (!isNaN(year)) {
-							yearsFromImages.add(year);
+						const y = parseInt(yearMatch[1], 10);
+						if (!isNaN(y)) {
+							yearsFromImages.add(y);
 						}
 					}
 				});
@@ -153,42 +218,30 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 				const allYears = new Set([...statsYears, ...yearsFromImages]);
 				const sortedAllYears = Array.from(allYears).sort((a, b) => a - b);
 
-				// Match files to years and build URLs
-				// Use first 4 digits of filename as year (e.g. "2025 (1).jpg" -> 2025)
-				const usedFiles = new Set();
+				// Match files to years (prefer YYYY.jpg; ignore oldYYYY.jpg — see pickFileForYear)
 				const imageResults = sortedAllYears.map((year) => {
-					const yearStr = String(year);
-					
-					const matchingFile = files?.find(file => {
-						if (usedFiles.has(file.name)) return false;
-						
-						const fileName = file.name;
-						// Extract year from filename: first 4 digits only (ignore " (1)", etc.)
-						const fileYearMatch = fileName.match(/^(\d{4})(?:\D|$)/);
-						if (!fileYearMatch) return false;
-						
-						const fileYear = parseInt(fileYearMatch[1], 10);
-						return fileYear === year;
-					});
+					const y = normalizeYear(year);
+					if (y == null) return { year: null, url: null };
+					const matchingFile = pickFileForYear(files, y);
 
 					if (matchingFile) {
-						// Mark file as used to prevent duplicates
-						usedFiles.add(matchingFile.name);
-						
 						const { data: urlData } = supabase.storage
 							.from("athlete-images")
 							.getPublicUrl(`${athleteFolder}/${matchingFile.name}`);
-						
-						return { year, url: urlData.publicUrl };
+
+						return { year: y, url: urlData.publicUrl };
 					}
-					
-					return { year, url: null };
+
+					return { year: y, url: null };
 				});
 
-				// Filter out failed images, sort by year (ascending - oldest first), and set URLs
-				const validUrls = imageResults
-					.filter(result => result.url !== null)
-					.sort((a, b) => a.year - b.year); // Sort by year ascending (oldest first)
+				// One slot per calendar year (defensive: same URL twice if years were mixed types)
+				const byYear = new Map();
+				for (const result of imageResults) {
+					if (result.url == null || result.year == null) continue;
+					if (!byYear.has(result.year)) byYear.set(result.year, result);
+				}
+				const validUrls = Array.from(byYear.values()).sort((a, b) => a.year - b.year);
 				
 				setImageUrls(validUrls);
 			} catch (error) {
@@ -199,19 +252,86 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 		};
 
 		getImages();
-	}, [athlete, availableYears]);
+	}, [athlete, availableYears, imageRefreshKey]);
+
+	useEffect(() => {
+		if (!uploadOpen) return;
+		const onKey = (ev) => {
+			if (ev.key === "Escape") setUploadOpen(false);
+		};
+		const onPointer = (ev) => {
+			const el = uploadPopoverRef.current;
+			if (el && !el.contains(ev.target)) setUploadOpen(false);
+		};
+		document.addEventListener("keydown", onKey);
+		document.addEventListener("pointerdown", onPointer, true);
+		return () => {
+			document.removeEventListener("keydown", onKey);
+			document.removeEventListener("pointerdown", onPointer, true);
+		};
+	}, [uploadOpen]);
 
 	return (
 		<div className="bg-white/5 border border-[#FFBF00]/20 rounded-lg p-6">
 			{/* Header Section */}
 			<div className="my-6">
-				<div>
-					<h2 className="text-3xl font-bold text-white mb-2">{formatNameFirstLast(athlete.name)}</h2>
-					<div className="flex gap-6 text-gray-300">
-						<p><span className="font-medium text-[#FFBF00]">Position:</span> {athlete.position}</p>
-						<p><span className="font-medium text-[#FFBF00]">Height:</span> {athlete.height}</p>
-						<p><span className="font-medium text-[#FFBF00]">Wing:</span> {athlete.wing}</p>
-						<p><span className="font-medium text-[#FFBF00]">Hand:</span> {athlete.hand}</p>
+				<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+					<div className="min-w-0 flex-1">
+						<h2 className="text-3xl font-bold text-white mb-2">{formatNameFirstLast(athlete.name)}</h2>
+						<div className="flex flex-wrap gap-x-6 gap-y-1 text-gray-300">
+							<p><span className="font-medium text-[#FFBF00]">Position:</span> {athlete.position}</p>
+							<p><span className="font-medium text-[#FFBF00]">Height:</span> {athlete.height}</p>
+							<p><span className="font-medium text-[#FFBF00]">Wing:</span> {athlete.wing}</p>
+							<p><span className="font-medium text-[#FFBF00]">Hand:</span> {athlete.hand}</p>
+						</div>
+					</div>
+					<div ref={uploadPopoverRef} className="relative shrink-0 sm:pt-1">
+						<button
+							type="button"
+							onClick={() => setUploadOpen((o) => !o)}
+							aria-expanded={uploadOpen}
+							aria-haspopup="dialog"
+							className="px-4 py-2 rounded bg-[#FFBF00] text-[#022851] font-medium hover:opacity-95"
+						>
+							Upload & crop
+						</button>
+						{uploadOpen && (
+							<div
+								className="absolute right-0 z-50 mt-2 w-[min(100vw-2rem,20rem)] rounded-lg border border-[#FFBF00]/30 bg-[#071528] p-4 shadow-xl"
+								role="dialog"
+								aria-label="Upload progress photo"
+							>
+								<form onSubmit={handlePhotoUpload} className="flex flex-col gap-4">
+									<label className="text-gray-300 text-sm flex flex-col gap-1">
+										Year
+										<input
+											type="number"
+											value={uploadYear}
+											min={2000}
+											max={2100}
+											onChange={(e) => setUploadYear(Number(e.target.value))}
+											className="bg-white/10 border border-[#FFBF00]/40 rounded px-3 py-2 text-white"
+										/>
+									</label>
+									<label className="text-gray-300 text-sm flex flex-col gap-1">
+										Photo
+										<input
+											type="file"
+											name="photo"
+											accept="image/*"
+											className="text-sm text-gray-300 file:mr-3 file:rounded file:border-0 file:bg-[#FFBF00]/20 file:px-3 file:py-1.5 file:text-[#FFBF00]"
+										/>
+									</label>
+									<button
+										type="submit"
+										disabled={uploadBusy}
+										className="self-center px-6 py-2 rounded bg-[#FFBF00] text-[#022851] font-medium disabled:opacity-50"
+									>
+										{uploadBusy ? "Uploading…" : "Upload & crop"}
+									</button>
+								</form>
+							</div>
+						)}
 					</div>
 				</div>
 			</div>
