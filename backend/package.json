@@ -8,6 +8,7 @@
     "node": ">=20"
   },
   "scripts": {
+    "postinstall": "patch-package",
     "start": "node server.js",
     "dev": "node server.js",
     "crop-preview": "node scripts/crop-preview.js"
@@ -23,5 +24,8 @@
     "sharp": "^0.34.5",
     "ws": "^8.20.1",
     "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "patch-package": "^8.0.1"
   }
 }

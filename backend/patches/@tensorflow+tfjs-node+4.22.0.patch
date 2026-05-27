@@ -1,0 +1,67 @@
+diff --git a/node_modules/@tensorflow/tfjs-node/dist/kernels/TopK.js b/node_modules/@tensorflow/tfjs-node/dist/kernels/TopK.js
+index 1111111..2222222 100644
+--- a/node_modules/@tensorflow/tfjs-node/dist/kernels/TopK.js
++++ b/node_modules/@tensorflow/tfjs-node/dist/kernels/TopK.js
+@@ -18,7 +18,9 @@
+ Object.defineProperty(exports, "__esModule", { value: true });
+ exports.topKConfig = void 0;
+ var tfjs_1 = require("@tensorflow/tfjs");
+-var util_1 = require("util");
++function __tfjsIsNullOrUndefined(val) {
++    return val === null || val === undefined;
++}
+ var nodejs_kernel_backend_1 = require("../nodejs_kernel_backend");
+ exports.topKConfig = {
+     kernelName: tfjs_1.TopK,
+@@ -27,8 +29,8 @@
+         var x = args.inputs.x;
+         var backend = args.backend;
+         var _a = args.attrs, k = _a.k, sorted = _a.sorted;
+-        var kCount = (0, util_1.isNullOrUndefined)(k) ? 1 : k;
+-        var isSorted = (0, util_1.isNullOrUndefined)(sorted) ? true : sorted;
++        var kCount = __tfjsIsNullOrUndefined(k) ? 1 : k;
++        var isSorted = __tfjsIsNullOrUndefined(sorted) ? true : sorted;
+         var opAttrs = [
+             { name: 'sorted', type: backend.binding.TF_ATTR_BOOL, value: isSorted },
+             (0, nodejs_kernel_backend_1.createTensorsTypeOpAttr)('T', x.dtype),
+diff --git a/node_modules/@tensorflow/tfjs-node/dist/nodejs_kernel_backend.js b/node_modules/@tensorflow/tfjs-node/dist/nodejs_kernel_backend.js
+index 1111111..2222222 100644
+--- a/node_modules/@tensorflow/tfjs-node/dist/nodejs_kernel_backend.js
++++ b/node_modules/@tensorflow/tfjs-node/dist/nodejs_kernel_backend.js
+@@ -71,6 +71,9 @@
+ var tf = require("@tensorflow/tfjs");
+ var tfjs_1 = require("@tensorflow/tfjs");
+ var util_1 = require("util");
++function __tfjsIsNullOrUndefined(val) {
++    return val === null || val === undefined;
++}
+ var int64_tensors_1 = require("./int64_tensors");
+ // tslint:disable-next-line:no-require-imports
+ var messages = require('./proto/api_pb');
+@@ -672,7 +675,7 @@
+  * Tensors.
+  */
+ function createTensorsTypeOpAttr(attrName, tensorsOrDtype) {
+-    if ((0, util_1.isNullOrUndefined)(tensorsOrDtype)) {
++    if (__tfjsIsNullOrUndefined(tensorsOrDtype)) {
+         throw new Error('Invalid input tensors value.');
+     }
+     return {
+@@ -686,7 +689,7 @@
+ exports.createTensorsTypeOpAttr = createTensorsTypeOpAttr;
+ // TODO(yassogba) remove? who uses this?
+ function createOpAttr(attrName, tensorsOrDtype, value) {
+-    if ((0, util_1.isNullOrUndefined)(tensorsOrDtype)) {
++    if (__tfjsIsNullOrUndefined(tensorsOrDtype)) {
+         throw new Error('Invalid input tensors value.');
+     }
+     return { name: attrName, type: nodeBackend().binding.TF_BOOL, value: value };
+@@ -694,7 +697,7 @@
+ exports.createOpAttr = createOpAttr;
+ /** Returns the dtype number for a single or list of input Tensors. */
+ function getTFDTypeForInputs(tensors) {
+-    if ((0, util_1.isNullOrUndefined)(tensors)) {
++    if (__tfjsIsNullOrUndefined(tensors)) {
+         throw new Error('Invalid input tensors value.');
+     }
+     if ((0, util_1.isArray)(tensors)) {
