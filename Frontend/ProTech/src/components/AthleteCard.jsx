@@ -98,21 +98,31 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 
 	const handlePhotoUpload = async (e) => {
 		e.preventDefault();
-		const input = e.target.elements.photo;
+		if (uploadBusy) return;
+
+		const form = e.currentTarget;
+		const input = form.elements.photo;
 		const file = input?.files?.[0];
 		if (!file) {
 			window.alert("Choose an image file.");
 			return;
 		}
+
 		setUploadBusy(true);
+		const UPLOAD_TIMEOUT_MS = 180000;
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS);
+
 		const formData = new FormData();
 		formData.append("photo", file);
 		formData.append("athleteId", athlete.id);
 		formData.append("year", String(uploadYear));
+
 		try {
 			const res = await fetch(`${API_BASE}/api/athlete-photo`, {
 				method: "POST",
 				body: formData,
+				signal: controller.signal,
 			});
 			const data = await res.json().catch(() => ({}));
 			if (!res.ok) {
@@ -121,12 +131,19 @@ function AthleteCard({ athlete, setIsModalOpen, setSelectedType, setFormData }) 
 			}
 			window.alert("Photo uploaded successfully.");
 			setImageRefreshKey((k) => k + 1);
-			e.target.reset();
+			form.reset();
 			setUploadOpen(false);
 		} catch (err) {
 			console.error(err);
-			window.alert(err.message || "Upload failed");
+			if (err?.name === "AbortError") {
+				window.alert(
+					"Upload timed out (server may be waking up or still processing). Wait a minute and try again.",
+				);
+			} else {
+				window.alert(err?.message || "Upload failed");
+			}
 		} finally {
+			clearTimeout(timeoutId);
 			setUploadBusy(false);
 		}
 	};
